@@ -1,0 +1,228 @@
+/**
+ * Card 컴포넌트 스타일 (SCSS Module)
+ *
+ * 왜 SCSS Module을 사용하는가?
+ * - 스타일 스코프 격리 (클래스명 충돌 방지)
+ * - SCSS 변수, 믹스인, 중첩 등 강력한 기능 활용
+ * - Tailwind와 함께 사용 가능
+ *
+ * SCSS Module 특징:
+ * - 파일명: *.module.scss
+ * - 클래스명 자동 해싱 (card_container__abc123)
+ * - import styles from './card.module.scss'
+ * - className={styles.container}
+ */
+
+// globals.scss의 변수와 믹스인 사용 가능
+@import '@/app/globals.scss';
+
+/**
+ * 카드 컨테이너
+ *
+ * SCSS 중첩 문법 활용
+ */
+.card {
+  background: white;
+  border-radius: 0.5rem;
+  padding: $spacing-lg;
+  transition: all $transition-base;
+  @include shadow('md');
+
+  // Hover 상태
+  &:hover {
+    transform: translateY(-2px);
+    @include shadow('lg');
+  }
+
+  // 다크모드 지원
+  @media (prefers-color-scheme: dark) {
+    background: rgb(31 41 55);
+    color: rgb(243 244 246);
+  }
+
+  // 반응형
+  @include respond-to('md') {
+    padding: $spacing-xl;
+  }
+}
+
+/**
+ * 카드 헤더
+ */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: $spacing-md;
+  padding-bottom: $spacing-sm;
+  border-bottom: 1px solid rgb(229 231 235);
+
+  @media (prefers-color-scheme: dark) {
+    border-bottom-color: rgb(55 65 81);
+  }
+}
+
+/**
+ * 카드 타이틀
+ */
+.title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: rgb(17 24 39);
+  @include text-ellipsis(1);
+
+  @media (prefers-color-scheme: dark) {
+    color: rgb(243 244 246);
+  }
+}
+
+/**
+ * 카드 본문
+ */
+.body {
+  color: rgb(75 85 99);
+  line-height: 1.6;
+
+  @media (prefers-color-scheme: dark) {
+    color: rgb(209 213 219);
+  }
+}
+
+/**
+ * 카드 푸터
+ */
+.footer {
+  margin-top: $spacing-md;
+  padding-top: $spacing-md;
+  border-top: 1px solid rgb(229 231 235);
+  @include flex-center;
+  justify-content: flex-end;
+  gap: $spacing-sm;
+
+  @media (prefers-color-scheme: dark) {
+    border-top-color: rgb(55 65 81);
+  }
+}
+
+/**
+ * 카드 variant
+ *
+ * SCSS의 &를 활용한 variant 패턴
+ */
+.card {
+  // Primary variant
+  &.primary {
+    background: linear-gradient(135deg, $color-primary, $color-secondary);
+    color: white;
+
+    .title,
+    .body {
+      color: white;
+    }
+  }
+
+  // Success variant
+  &.success {
+    border-left: 4px solid $color-success;
+  }
+
+  // Warning variant
+  &.warning {
+    border-left: 4px solid $color-warning;
+  }
+
+  // Danger variant
+  &.danger {
+    border-left: 4px solid $color-danger;
+  }
+}
+
+/**
+ * 카드 size
+ */
+.card {
+  &.sm {
+    padding: $spacing-sm;
+  }
+
+  &.md {
+    padding: $spacing-md;
+  }
+
+  &.lg {
+    padding: $spacing-lg;
+  }
+
+  &.xl {
+    padding: $spacing-xl;
+  }
+}
+
+/**
+ * 로딩 상태
+ */
+.loading {
+  opacity: 0.6;
+  pointer-events: none;
+  position: relative;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 2rem;
+    height: 2rem;
+    margin: -1rem 0 0 -1rem;
+    border: 3px solid rgb(229 231 235);
+    border-top-color: $color-primary;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/**
+ * SCSS 함수 예시
+ */
+@function lighten-color($color, $amount) {
+  @return mix(white, $color, $amount);
+}
+
+@function darken-color($color, $amount) {
+  @return mix(black, $color, $amount);
+}
+
+/**
+ * 사용 예시:
+ *
+ * ```tsx
+ * import styles from './card.module.scss';
+ *
+ * function Card({ variant, size, loading }) {
+ *   return (
+ *     <div className={cn(
+ *       styles.card,
+ *       variant && styles[variant],
+ *       size && styles[size],
+ *       loading && styles.loading
+ *     )}>
+ *       <div className={styles.header}>
+ *         <h3 className={styles.title}>Card Title</h3>
+ *       </div>
+ *       <div className={styles.body}>
+ *         Card content goes here...
+ *       </div>
+ *       <div className={styles.footer}>
+ *         <button>Action</button>
+ *       </div>
+ *     </div>
+ *   );
+ * }
+ * ```
+ */
