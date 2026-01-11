@@ -1,36 +1,133 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Next Clean Starter
 
-## Getting Started
+Clean Architecture와 SOLID 원칙을 적용한 프로덕션 준비 완료 Next.js 스타터 템플릿
 
-First, run the development server:
+## 🎯 주요 특징
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- ✅ **Clean Architecture**: 도메인 중심 설계로 비즈니스 로직과 프레임워크 분리
+- ✅ **SOLID 원칙**: 유지보수 가능하고 확장 가능한 코드 구조
+- ✅ **TypeScript**: 엄격한 타입 검사로 안정성 확보
+- ✅ **Zustand**: 경량하고 강력한 상태 관리
+- ✅ **React Hook Form + Zod**: 타입 안전한 폼 관리 및 유효성 검증
+- ✅ **Tailwind CSS**: 유틸리티 우선 CSS 프레임워크
+- ✅ **인증 시스템**: Public/Private 라우트 구분
+- ✅ **탭 기능**: Zustand 기반 단일 페이지 탭 관리
+- ✅ **모달 시스템**: 중앙 집중식 모달 상태 관리
+
+## 📁 프로젝트 구조
+
+```
+src/
+├── domain/                   # 도메인 레이어 (비즈니스 로직)
+│   ├── entities/            # 엔티티 (User, Product 등)
+│   ├── repositories/        # Repository 인터페이스 (DIP)
+│   └── use-cases/           # 비즈니스 유스케이스
+│
+├── application/             # 애플리케이션 레이어
+│   ├── stores/              # Zustand 상태 관리
+│   └── hooks/               # Custom React Hooks
+│
+├── infrastructure/          # 인프라 레이어
+│   ├── api/                 # API 클라이언트
+│   ├── storage/             # 로컬 스토리지
+│   └── repositories/        # Repository 구현체
+│
+├── presentation/            # 프레젠테이션 레이어
+│   ├── components/          # React 컴포넌트
+│   │   ├── ui/              # 기본 UI (Button, Input 등)
+│   │   ├── forms/           # Form 컴포넌트
+│   │   └── layouts/         # 레이아웃 컴포넌트
+│   ├── contexts/            # React Context
+│   └── middleware/          # 인증 미들웨어
+│
+├── shared/                  # 공통 유틸리티
+│   ├── types/               # 공통 타입 정의
+│   ├── utils/               # 유틸 함수
+│   └── constants/           # 상수
+│
+└── app/                     # Next.js App Router
+    ├── page.tsx             # 홈 페이지
+    ├── login/               # 로그인 페이지
+    └── dashboard/           # 대시보드 (인증 필요)
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🚀 시작하기
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 1. 패키지 설치
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+pnpm install
+```
 
-## Learn More
+### 2. 개발 서버 실행
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+pnpm dev
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+브라우저에서 [http://localhost:3000](http://localhost:3000) 열기
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### 3. 데모 계정으로 로그인
 
-## Deploy on Vercel
+- 이메일: `test@example.com`
+- 비밀번호: `Password123!`
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 📖 주요 개념
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Clean Architecture 레이어
+
+1. **Domain Layer** (도메인 레이어)
+   - 비즈니스 로직과 규칙
+   - 프레임워크에 독립적
+
+2. **Application Layer** (애플리케이션 레이어)
+   - 애플리케이션 흐름 제어
+   - UI 상태 관리
+
+3. **Infrastructure Layer** (인프라 레이어)
+   - 외부 시스템 연동
+   - API, Database, Storage
+
+4. **Presentation Layer** (프레젠테이션 레이어)
+   - UI 렌더링
+   - React 컴포넌트
+
+### Dependency Inversion Principle (DIP)
+
+```typescript
+// 도메인은 인터페이스만 의존
+export interface IAuthRepository {
+  login(params: LoginParams): Promise<ApiResponse<LoginResponse>>;
+}
+
+// 인프라가 구체적인 구현 제공
+export class AuthRepository implements IAuthRepository {
+  login = async (params) => { /* 실제 구현 */ };
+}
+```
+
+## 🧪 테스트
+
+```bash
+# 타입 체크
+pnpm tsc --noEmit
+
+# 빌드
+pnpm build
+
+# 프로덕션 실행
+pnpm start
+```
+
+## 📚 참고 자료
+
+- [Clean Architecture](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)
+- [SOLID Principles](https://en.wikipedia.org/wiki/SOLID)
+- [Next.js Documentation](https://nextjs.org/docs)
+- [Zustand](https://github.com/pmndrs/zustand)
+
+## 📄 라이선스
+
+MIT License
+
+(demo: admin@example.com / Admin123!)
