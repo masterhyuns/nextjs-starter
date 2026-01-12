@@ -209,6 +209,11 @@ export const useAuthStore = create<AuthStore>()(
        * 언제 호출하는가?
        * - 앱 초기화 시
        * - 페이지 새로고침 후
+       *
+       * 비즈니스 플로우:
+       * 1. 사용자 정보 API를 로딩한다
+       * 2. 로딩에 실패하면 통합인증 로그인페이지로 리다이렉트 한다
+       * 3. 정상적으로 로그인하면 사용자 정보를 Set한다
        */
       loadUser: async () => {
         set({ status: 'loading' });
@@ -217,12 +222,19 @@ export const useAuthStore = create<AuthStore>()(
           const result = await authAPI.getCurrentUser();
 
           if (result.success && result.data) {
+            // 성공: 사용자 정보 Set
             set({
               user: result.data,
               isAuthenticated: true,
               status: 'success',
             });
           } else {
+            // 실패: 통합인증 로그인페이지로 리다이렉트
+            const integratedAuthUrl = process.env.NEXT_PUBLIC_INTEGRATED_AUTH_URL;
+            if (integratedAuthUrl && typeof window !== 'undefined') {
+              window.location.href = integratedAuthUrl;
+            }
+
             set({
               user: null,
               isAuthenticated: false,
@@ -230,6 +242,12 @@ export const useAuthStore = create<AuthStore>()(
             });
           }
         } catch (error) {
+          // 에러 발생: 통합인증 로그인페이지로 리다이렉트
+          const integratedAuthUrl = process.env.NEXT_PUBLIC_INTEGRATED_AUTH_URL;
+          if (integratedAuthUrl && typeof window !== 'undefined') {
+            window.location.href = integratedAuthUrl;
+          }
+
           set({
             user: null,
             isAuthenticated: false,
