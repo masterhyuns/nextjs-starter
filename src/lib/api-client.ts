@@ -21,6 +21,11 @@ import { API_CONFIG, STORAGE_KEYS } from './constants';
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
 
 /**
+ * Query String 파라미터 타입
+ */
+type QueryParams = Record<string, string | number | boolean | undefined | null>;
+
+/**
  * API 요청 옵션
  */
 interface RequestOptions extends RequestInit {
@@ -28,6 +33,8 @@ interface RequestOptions extends RequestInit {
   auth?: boolean;
   /** 타임아웃 (밀리초) */
   timeout?: number;
+  /** GET 요청 시 query string 파라미터 (자동으로 URL에 붙음) */
+  params?: QueryParams;
 }
 
 /**
@@ -97,6 +104,36 @@ export class ApiClient {
   };
 
   /**
+   * Query String 생성
+   *
+   * 왜 필요한가?
+   * - GET 요청 시 파라미터를 객체로 전달 가능
+   * - URLSearchParams를 사용하여 자동 인코딩
+   * - undefined, null 값은 자동으로 제외
+   *
+   * @example
+   * buildQueryString({ page: 1, limit: 10, search: 'test' })
+   * // => "?page=1&limit=10&search=test"
+   */
+  private buildQueryString = (params?: QueryParams): string => {
+    if (!params || Object.keys(params).length === 0) {
+      return '';
+    }
+
+    const searchParams = new URLSearchParams();
+
+    Object.entries(params).forEach(([key, value]) => {
+      // undefined, null 값은 제외
+      if (value !== undefined && value !== null) {
+        searchParams.append(key, String(value));
+      }
+    });
+
+    const queryString = searchParams.toString();
+    return queryString ? `?${queryString}` : '';
+  };
+
+  /**
    * 공통 요청 메서드
    *
    * 왜 private으로 만들었는가?
@@ -110,7 +147,14 @@ export class ApiClient {
     data?: unknown,
     options?: RequestOptions
   ): Promise<ApiResponse<T>> => {
-    const fullURL = url.startsWith('http') ? url : `${this.baseURL}${url}`;
+    // Query String 추가 (GET, DELETE 요청 시)
+    let finalURL = url;
+    if ((method === 'GET' || method === 'DELETE') && options?.params) {
+      const queryString = this.buildQueryString(options.params);
+      finalURL = `${url}${queryString}`;
+    }
+
+    const fullURL = finalURL.startsWith('http') ? finalURL : `${this.baseURL}${finalURL}`;
     const timeout = options?.timeout || this.defaultTimeout;
 
     try {
@@ -250,7 +294,35 @@ export class ApiClient {
  * API 클라이언트 싱글톤 인스턴스 내보내기
  *
  * 사용 예시:
+ *
+ * @example
+ * // 기본 GET 요청
  * import { apiClient } from '@/lib/api-client';
  * const response = await apiClient.get('/users');
+ *
+ * @example
+ * // Query String 파라미터 사용
+ * const response = await apiClient.get('/users', {
+ *   params: { page: 1, limit: 10, search: 'john' }
+ * });
+ * // => GET /users?page=1&limit=10&search=john
+ *
+ * @example
+ * // POST 요청
+ * const response = await apiClient.post('/users', {
+ *   name: 'John Doe',
+ *   email: 'john@example.com'
+ * });
+ *
+ * @example
+ * // 인증 없이 요청
+ * const response = await apiClient.get('/public/data', { auth: false });
+ *
+ * @example
+ * // DELETE 요청에도 params 사용 가능
+ * const response = await apiClient.delete('/users/1', {
+ *   params: { soft: true }
+ * });
+ * // => DELETE /users/1?soft=true
  */
 export const apiClient = ApiClient.getInstance();
