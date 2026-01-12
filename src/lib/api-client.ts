@@ -187,6 +187,7 @@ export class ApiClient {
       const requestOptions: RequestInit = {
         method,
         headers,
+        credentials: 'include', // 쿠키 포함 (cross-origin 포함)
         ...options,
       };
 
