@@ -17,7 +17,7 @@
 
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useMemo, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuthStore } from '@/entities/auth';
 
@@ -36,7 +36,7 @@ import { useAuthStore } from '@/entities/auth';
  * - 실수로 보호되지 않는 페이지 발생 방지
  * - 역할 기반 접근 제어 (RBAC) 지원
  */
-const PUBLIC_ROUTES = ['/login', '/404', '/403']; // 비로그인 접근 가능
+const PUBLIC_ROUTES = ['/login', '/404', '/403', '/logout']; // 비로그인 접근 가능
 const AUTH_ROUTES = ['/login']; // 로그인 시 접근 불가 (대시보드로 리다이렉트)
 const ADMIN_ROUTES = ['/admin']; // admin 역할만 접근 가능
 
@@ -81,6 +81,22 @@ export const AuthGuard = ({ children }: AuthGuardProps) => {
   }, [loadUser]);
 
   /**
+   * 라우트 타입 체크 (useMemo로 최적화)
+   *
+   * 왜 useMemo를 사용하는가?
+   * - pathname이 변경될 때만 재계산
+   * - 불필요한 배열 순회 방지
+   * - 리렌더링 성능 향상
+   */
+  const routeType = useMemo(() => {
+    const isPublic = PUBLIC_ROUTES.some((route) => pathname === route);
+    const isAuth = AUTH_ROUTES.some((route) => pathname.startsWith(route));
+    const isAdmin = ADMIN_ROUTES.some((route) => pathname.startsWith(route));
+
+    return { isPublic, isAuth, isAdmin };
+  }, [pathname]);
+
+  /**
    * 라우트 변경 시 인증 체크
    *
    * 체크 순서 (중요!):
@@ -89,11 +105,10 @@ export const AuthGuard = ({ children }: AuthGuardProps) => {
    * 3. Admin 라우트 체크: admin 역할이 아니면 403 또는 대시보드로 (RBAC)
    * 4. Private 라우트 체크: 비로그인이면 로그인 페이지로 (나머지 모든 페이지)
    *
-   * 왜 이 순서인가?
-   * - Auth 라우트 우선: 로그인한 사용자가 /login 접근 시 즉시 리다이렉트
-   * - Public 다음: 공개 페이지는 인증 체크 없이 바로 허용
-   * - Admin 다음: 역할 기반 접근 제어 (로그인되어 있지만 권한 부족)
-   * - Private 마지막: public/auth/admin 아니면 모두 인증 필요 (기본 보안)
+   * 최적화:
+   * - useMemo로 라우트 타입 체크 캐싱
+   * - useCallback으로 함수 메모이제이션
+   * - 필요한 의존성만 포함하여 불필요한 리렌더링 방지
    */
   useEffect(() => {
     // 로딩 중이면 대기
@@ -101,33 +116,31 @@ export const AuthGuard = ({ children }: AuthGuardProps) => {
       return;
     }
 
-    const isPublicRoute = PUBLIC_ROUTES.some((route) => pathname === route);
-    const isAuthRoute = AUTH_ROUTES.some((route) => pathname.startsWith(route));
-    const isAdminRoute = ADMIN_ROUTES.some((route) => pathname.startsWith(route));
+    const { isPublic, isAuth, isAdmin } = routeType;
 
     console.log('[AuthGuard]', {
       pathname,
       isAuthenticated,
       userRole: user?.role,
-      isPublicRoute,
-      isAuthRoute,
-      isAdminRoute,
+      isPublic,
+      isAuth,
+      isAdmin,
     });
 
     // 1. Auth 라우트 (/login) - 로그인 시 대시보드로 리다이렉트
-    if (isAuthRoute && isAuthenticated) {
+    if (isAuth && isAuthenticated) {
       console.log('[AuthGuard] Authenticated user on auth route, redirecting to dashboard');
       router.replace('/dashboard');
       return;
     }
 
-    // 2. Public 라우트 (/login, /404, /403) - 항상 접근 가능
-    if (isPublicRoute) {
+    // 2. Public 라우트 (/login, /404, /403, /logout) - 항상 접근 가능
+    if (isPublic) {
       return;
     }
 
     // 3. Admin 라우트 (/admin/*) - admin 역할만 접근 가능 (RBAC)
-    if (isAdminRoute) {
+    if (isAdmin) {
       // 3-1. 비로그인 - 로그인 페이지로
       if (!isAuthenticated) {
         console.log('[AuthGuard] Unauthenticated user on admin route, redirecting to login');
@@ -151,7 +164,7 @@ export const AuthGuard = ({ children }: AuthGuardProps) => {
       router.replace(`/login?callbackUrl=${encodeURIComponent(callbackUrl)}`);
       return;
     }
-  }, [pathname, isAuthenticated, user, status, router]);
+  }, [routeType, isAuthenticated, user?.role, status, router, pathname]);
 
   /**
    * 로딩 중일 때 화면

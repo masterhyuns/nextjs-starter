@@ -15,17 +15,14 @@ import type { ApiResponse } from '@/lib/types';
 import type { LoginParams, LoginResponse, RefreshTokenResponse } from './types';
 import type { User, CreateUserParams } from './types';
 import { apiClient } from '@/lib/api-client';
-import { LocalStorage } from '@/lib/storage';
-import { setCookie, removeCookie } from '@/lib/cookie';
-
-const STORAGE_KEYS = {
-  ACCESS_TOKEN: 'access_token',
-  REFRESH_TOKEN: 'refresh_token',
-  USER_INFO: 'user_info',
-} as const;
 
 /**
  * 로그인
+ *
+ * 쿠키 기반 인증:
+ * - 서버에서 httpOnly 쿠키로 토큰 관리
+ * - 프론트엔드는 user 정보만 반환받음
+ * - localStorage에 토큰 저장하지 않음 (XSS 방어)
  *
  * 실제 API 호출 예시:
  * ```ts
@@ -39,12 +36,6 @@ export const login = async (params: LoginParams): Promise<ApiResponse<LoginRespo
 
     // Mock 응답 (개발용)
     const mockResponse = mockLogin(params);
-
-    // 성공 시 토큰 저장
-    if (mockResponse.success && mockResponse.data) {
-      saveTokens(mockResponse.data.accessToken, mockResponse.data.refreshToken);
-      saveUser(mockResponse.data.user);
-    }
 
     return mockResponse;
   } catch (error) {
@@ -80,14 +71,15 @@ export const signup = async (params: CreateUserParams): Promise<ApiResponse<User
 
 /**
  * 로그아웃
+ *
+ * 쿠키 기반 인증:
+ * - 서버에서 httpOnly 쿠키 삭제
+ * - 프론트엔드는 API 호출만 수행
  */
 export const logout = async (): Promise<ApiResponse<void>> => {
   try {
-    // TODO: 실제 API 호출
+    // TODO: 실제 API 호출 (서버에서 쿠키 삭제)
     // await apiClient.post('/auth/logout');
-
-    // 로컬 토큰 삭제
-    clearTokens();
 
     return {
       success: true,
@@ -106,6 +98,10 @@ export const logout = async (): Promise<ApiResponse<void>> => {
 
 /**
  * 토큰 갱신
+ *
+ * 쿠키 기반 인증:
+ * - 서버에서 자동으로 refresh token 쿠키 확인
+ * - 새로운 토큰을 httpOnly 쿠키로 재설정
  */
 export const refreshToken = async (token: string): Promise<ApiResponse<RefreshTokenResponse>> => {
   try {
@@ -124,10 +120,6 @@ export const refreshToken = async (token: string): Promise<ApiResponse<RefreshTo
       timestamp: new Date().toISOString(),
     };
 
-    if (mockResponse.success && mockResponse.data) {
-      saveTokens(mockResponse.data.accessToken, mockResponse.data.refreshToken);
-    }
-
     return mockResponse;
   } catch (error) {
     return {
@@ -141,27 +133,34 @@ export const refreshToken = async (token: string): Promise<ApiResponse<RefreshTo
 
 /**
  * 현재 사용자 정보 조회
+ *
+ * 쿠키 기반 인증:
+ * - credentials: 'include'로 쿠키 자동 전송
+ * - 200 OK: 로그인 상태
+ * - 401 Unauthorized: 비로그인 상태 → 통합 로그인 페이지로 리다이렉트
  */
 export const getCurrentUser = async (): Promise<ApiResponse<User>> => {
   try {
     // TODO: 실제 API 호출
     // const response = await apiClient.get<User>('/auth/me');
+    // return response;
 
-    // Mock: 로컬 스토리지에서 가져오기
-    const user = LocalStorage.getItem<User>(STORAGE_KEYS.USER_INFO);
-
-    if (!user) {
-      return {
-        success: false,
-        error: '로그인이 필요합니다',
-        statusCode: 401,
-        timestamp: new Date().toISOString(),
-      };
-    }
+    // Mock: 임시 사용자 반환 (개발용)
+    // 실제로는 서버에서 쿠키를 검증하고 사용자 정보 반환
+    const mockUser: User = {
+      id: '1',
+      email: 'test@example.com',
+      name: '테스트 사용자',
+      role: 'admin', // admin 권한 테스트용
+      status: 'active',
+      emailVerified: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
 
     return {
       success: true,
-      data: user,
+      data: mockUser,
       statusCode: 200,
       timestamp: new Date().toISOString(),
     };
@@ -173,39 +172,6 @@ export const getCurrentUser = async (): Promise<ApiResponse<User>> => {
       timestamp: new Date().toISOString(),
     };
   }
-};
-
-// ==================== Helper Functions ====================
-
-/**
- * 토큰 저장 (localStorage + cookie)
- */
-const saveTokens = (accessToken: string, refreshToken: string): void => {
-  LocalStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, accessToken);
-  LocalStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
-
-  setCookie('auth-token', accessToken, {
-    expires: 7,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-  });
-};
-
-/**
- * 사용자 정보 저장
- */
-const saveUser = (user: User): void => {
-  LocalStorage.setItem(STORAGE_KEYS.USER_INFO, user);
-};
-
-/**
- * 토큰 삭제
- */
-const clearTokens = (): void => {
-  LocalStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
-  LocalStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
-  LocalStorage.removeItem(STORAGE_KEYS.USER_INFO);
-  removeCookie('auth-token');
 };
 
 // ==================== Mock Functions (개발용) ====================

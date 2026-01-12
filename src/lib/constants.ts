@@ -25,17 +25,12 @@ export const API_CONFIG = {
 /**
  * 로컬 스토리지 키
  *
- * 왜 as const를 사용하는가?
- * - 리터럴 타입 유지 (string이 아닌 정확한 문자열 타입)
- * - 오타 방지
+ * 왜 인증 관련 키가 없는가?
+ * - 쿠키 기반 인증 사용 (httpOnly 쿠키)
+ * - localStorage는 XSS 공격에 취약하므로 토큰 저장 금지
+ * - 테마, 언어 등 비보안 설정만 localStorage 사용
  */
 export const STORAGE_KEYS = {
-  /** 액세스 토큰 */
-  ACCESS_TOKEN: 'access_token',
-  /** 리프레시 토큰 */
-  REFRESH_TOKEN: 'refresh_token',
-  /** 사용자 정보 */
-  USER_INFO: 'user_info',
   /** 테마 설정 */
   THEME: 'theme',
   /** 언어 설정 */

@@ -15,7 +15,6 @@
  */
 
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
 import type { User, LoginParams, CreateUserParams } from './types';
 import * as authAPI from './api';
 import type { AsyncState } from '@/lib/types';
@@ -94,12 +93,13 @@ type AuthStore = AuthState & AuthActions;
 /**
  * 인증 스토어 생성
  *
- * Zustand 미들웨어:
- * - persist: localStorage에 상태 저장 (새로고침 시 유지)
+ * 왜 persist 미들웨어를 사용하지 않는가?
+ * - 쿠키 기반 인증 사용 (서버에서 httpOnly 쿠키 관리)
+ * - 새로고침 시 loadUser() API 호출로 인증 상태 복원
+ * - localStorage에 민감한 정보 저장 금지 (XSS 방어)
+ * - 순수 메모리 상태 관리만 수행
  */
-export const useAuthStore = create<AuthStore>()(
-  persist(
-    (set) => ({
+export const useAuthStore = create<AuthStore>()((set) => ({
       // ==================== 초기 상태 ====================
       user: null,
       isAuthenticated: false,
@@ -262,20 +262,5 @@ export const useAuthStore = create<AuthStore>()(
       clearError: () => {
         set({ error: null });
       },
-    }),
-    {
-      name: 'auth-storage', // localStorage 키 이름
-      /**
-       * 어떤 상태를 persist할 것인가?
-       *
-       * 왜 일부만 저장하는가?
-       * - status, error는 일시적인 상태이므로 저장 불필요
-       * - user만 저장하여 새로고침 시 복원
-       */
-      partialize: (state) => ({
-        user: state.user,
-        isAuthenticated: state.isAuthenticated,
-      }),
-    }
-  )
+    })
 );

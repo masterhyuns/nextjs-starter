@@ -123,14 +123,12 @@ interface LoginResponse {
 }
 
 export const login = async (data: LoginData) => {
-  const response = await apiClient.post<LoginResponse>('/auth/login', data, {
-    auth: false, // 로그인 요청은 인증 불필요
-  });
+  const response = await apiClient.post<LoginResponse>('/auth/login', data);
 
   if (response.success) {
-    // 토큰 저장 로직
-    localStorage.setItem('accessToken', response.data.accessToken);
-    localStorage.setItem('refreshToken', response.data.refreshToken);
+    // 쿠키 기반 인증: 서버에서 httpOnly 쿠키 자동 생성
+    // 프론트엔드에서 토큰 저장 불필요
+    console.log('로그인 성공');
   }
 
   return response;
@@ -224,11 +222,11 @@ export const getLargeData = async () => {
 };
 
 /**
- * 12. 인증 없이 요청
+ * 12. 타임아웃 커스텀 설정
  */
 export const getPublicPosts = async () => {
   const response = await apiClient.get('/public/posts', null, {
-    auth: false, // Authorization 헤더 미포함
+    timeout: 10000, // 10초 타임아웃
   });
 
   return response;

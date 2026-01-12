@@ -13,7 +13,7 @@
  */
 
 import type { ApiResponse } from './types';
-import { API_CONFIG, STORAGE_KEYS } from './constants';
+import { API_CONFIG } from './constants';
 
 /**
  * HTTP 메서드
@@ -22,10 +22,12 @@ type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
 
 /**
  * API 요청 옵션
+ *
+ * 왜 auth 옵션이 없는가?
+ * - 쿠키 기반 인증으로 모든 요청에 자동으로 쿠키 포함
+ * - credentials: 'include'로 처리되므로 별도 옵션 불필요
  */
 export interface RequestOptions extends RequestInit {
-  /** 인증 토큰 포함 여부 */
-  auth?: boolean;
   /** 타임아웃 (밀리초) */
   timeout?: number;
 }
@@ -181,7 +183,7 @@ export class ApiClient {
 
     try {
       // 2. 요청 헤더 설정
-      const headers = this.buildHeaders(options?.auth ?? true);
+      const headers = this.buildHeaders();
 
       // 3. 요청 옵션 구성
       const requestOptions: RequestInit = {
@@ -215,39 +217,18 @@ export class ApiClient {
 
   /**
    * 요청 헤더 생성
+   *
+   * 왜 Authorization 헤더가 없는가?
+   * - 쿠키 기반 인증 사용 (credentials: 'include')
+   * - 서버에서 httpOnly 쿠키로 토큰 관리
+   * - 쿠키는 브라우저가 자동으로 전송
+   * - XSS 공격 방어 (JavaScript에서 토큰 접근 불가)
    */
-  private buildHeaders = (includeAuth: boolean): HeadersInit => {
-    const headers: HeadersInit = {
+  private buildHeaders = (): HeadersInit => {
+    return {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
     };
-
-    // 인증 토큰 추가
-    if (includeAuth) {
-      const token = this.getAccessToken();
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-    }
-
-    return headers;
-  };
-
-  /**
-   * 액세스 토큰 가져오기
-   *
-   * 왜 localStorage를 사용하는가?
-   * - 간단한 구현
-   * - 페이지 새로고침 시에도 유지
-   * - httpOnly 쿠키보다 접근하기 쉬움
-   *
-   * 보안 고려사항:
-   * - XSS 공격에 취약할 수 있음
-   * - 프로덕션에서는 httpOnly 쿠키 사용 권장
-   */
-  private getAccessToken = (): string | null => {
-    if (typeof window === 'undefined') return null;
-    return localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
   };
 
   /**
