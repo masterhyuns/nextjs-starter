@@ -3,9 +3,14 @@
  *
  * 왜 필요한가?
  * - API 호출마다 useState로 loading, data, error 상태 관리하는 보일러플레이트 제거
- * - 컴포넌트 내에서 편리하게 API 호출 및 상태 관리
+ * - apiClient를 래핑하여 상태 관리만 추가
  * - 자동 로딩 상태, 에러 처리
  * - 타입 안전성 확보
+ *
+ * 설계 원칙:
+ * - apiClient의 기능은 그대로 활용
+ * - 훅에서는 loading, data, error 상태 관리만 추가
+ * - 중복 구현 없이 래퍼로만 동작
  *
  * 사용 시나리오:
  * - 컴포넌트 내: useApiClient 사용 (상태 관리 필요)
@@ -62,7 +67,7 @@ interface UseApiClientReturn<T> extends ApiState<T> {
  *
  * useEffect(() => {
  *   get('/users', { page: 1, limit: 10 });
- * }, []);
+ * }, [get]);
  *
  * if (loading) return <div>로딩 중...</div>;
  * if (error) return <div>에러: {error}</div>;
@@ -96,18 +101,18 @@ export const useApiClient = <T = unknown>(): UseApiClientReturn<T> => {
   /**
    * API 요청 래퍼
    *
-   * 왜 별도 함수로 분리했는가?
-   * - 모든 HTTP 메서드에서 공통 로직 재사용
-   * - loading, error 상태 자동 관리
-   * - 중복 코드 제거
+   * 왜 이렇게 구현했는가?
+   * - apiClient의 메서드를 그대로 호출
+   * - 상태 관리(loading, data, error)만 추가
+   * - 중복 구현 없이 깔끔하게 래핑
    */
   const request = useCallback(
-    async <TData = T>(
-      method: 'get' | 'post' | 'put' | 'delete' | 'patch',
+    async (
+      apiMethod: typeof apiClient.get | typeof apiClient.post | typeof apiClient.put | typeof apiClient.delete | typeof apiClient.patch,
       url: string,
       data?: unknown,
       options?: RequestOptions
-    ): Promise<ApiResponse<TData>> => {
+    ): Promise<ApiResponse<T>> => {
       // 1. 로딩 시작
       setState((prev) => ({
         ...prev,
@@ -115,82 +120,63 @@ export const useApiClient = <T = unknown>(): UseApiClientReturn<T> => {
         error: null,
       }));
 
-      try {
-        // 2. API 호출
-        const response = await apiClient[method]<TData>(url, data, options);
+      // 2. apiClient 메서드 호출 (기존 로직 그대로 활용)
+      const response = await apiMethod<T>(url, data, options);
 
-        // 3. 성공 시 상태 업데이트
-        if (response.success) {
-          setState({
-            data: response.data as unknown as T,
-            loading: false,
-            error: null,
-            statusCode: response.statusCode,
-          });
-        } else {
-          // 4. 실패 시 에러 상태 업데이트
-          setState({
-            data: null,
-            loading: false,
-            error: response.error || '알 수 없는 오류',
-            statusCode: response.statusCode,
-          });
-        }
-
-        return response;
-      } catch (err) {
-        // 5. 예외 처리
-        const errorMessage = err instanceof Error ? err.message : '알 수 없는 오류';
+      // 3. 응답에 따라 상태 업데이트
+      if (response.success) {
+        setState({
+          data: response.data,
+          loading: false,
+          error: null,
+          statusCode: response.statusCode,
+        });
+      } else {
         setState({
           data: null,
           loading: false,
-          error: errorMessage,
-          statusCode: null,
+          error: response.error || '알 수 없는 오류',
+          statusCode: response.statusCode,
         });
-
-        return {
-          success: false,
-          error: errorMessage,
-          statusCode: 0,
-          timestamp: new Date().toISOString(),
-        };
       }
+
+      return response;
     },
     []
   );
 
   /**
-   * GET 요청
+   * GET 요청 - apiClient.get을 래핑
    */
   const get = useCallback(
     (url: string, data?: unknown, options?: RequestOptions) => {
-      return request<T>('get', url, data, options);
+      return request(apiClient.get.bind(apiClient), url, data, options);
     },
     [request]
   );
 
   /**
-   * POST 요청
+   * POST 요청 - apiClient.post를 래핑
    */
   const post = useCallback(
     (url: string, data?: unknown, options?: RequestOptions) => {
-      return request<T>('post', url, data, options);
+      return request(apiClient.post.bind(apiClient), url, data, options);
     },
     [request]
   );
 
   /**
-   * PUT 요청
+   * PUT 요청 - apiClient.put을 래핑
    */
   const put = useCallback(
     (url: string, data?: unknown, options?: RequestOptions) => {
-      return request<T>('put', url, data, options);
+      return request(apiClient.put.bind(apiClient), url, data, options);
     },
     [request]
   );
 
   /**
-   * DELETE 요청
+   * DELETE 요청 - apiClient.delete를 래핑
    *
    * 왜 'del'인가?
    * - 'delete'는 JavaScript 예약어
@@ -198,17 +184,17 @@ export const useApiClient = <T = unknown>(): UseApiClientReturn<T> => {
    */
   const del = useCallback(
     (url: string, data?: unknown, options?: RequestOptions) => {
-      return request<T>('delete', url, data, options);
+      return request(apiClient.delete.bind(apiClient), url, data, options);
     },
     [request]
   );
 
   /**
-   * PATCH 요청
+   * PATCH 요청 - apiClient.patch를 래핑
    */
   const patch = useCallback(
     (url: string, data?: unknown, options?: RequestOptions) => {
-      return request<T>('patch', url, data, options);
+      return request(apiClient.patch.bind(apiClient), url, data, options);
     },
     [request]
   );
