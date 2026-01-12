@@ -1,7 +1,10 @@
 /**
- * 대시보드 페이지 (탭 기능 포함)
+ * 대시보드 페이지 (Header + 탭 기능 포함)
  *
- * 이 페이지는 Zustand 탭 스토어를 활용한 예시를 보여줍니다
+ * 이 페이지는 다음을 보여줍니다:
+ * - Header 컴포넌트 사용 예시
+ * - Zustand 탭 스토어를 활용한 탭 네비게이션
+ * - 모달 기능 데모
  */
 
 'use client';
@@ -12,6 +15,7 @@ import { useAuthStore } from '@/entities/auth';
 import { useTabStore } from '@/lib/tab.store';
 import { useModalStore } from '@/lib/modal.store';
 import { Button } from '@/components/ui/button';
+import { Header, type MenuItem } from '@/components/layouts/header';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -35,6 +39,31 @@ export default function DashboardPage() {
       { id: 'settings', label: '설정' },
     ], 'overview');
   }, [setTabs]);
+
+  /**
+   * 헤더 메뉴 설정
+   */
+  const menuItems: MenuItem[] = [
+    { label: '홈', href: '/' },
+    { label: '대시보드', href: '/dashboard' },
+    {
+      label: '프로젝트',
+      children: [
+        { label: '전체 프로젝트', href: '/projects' },
+        { label: '내 프로젝트', href: '/projects/my' },
+        { label: '즐겨찾기', href: '/projects/favorites' },
+      ],
+    },
+    {
+      label: '리소스',
+      children: [
+        { label: '문서', href: '/docs' },
+        { label: 'API', href: '/api-docs' },
+        { label: '가이드', href: '/guides' },
+      ],
+    },
+    { label: '설정', href: '/settings' },
+  ];
 
   const handleLogout = async () => {
     await logout();
@@ -138,22 +167,16 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* 헤더 */}
-      <header className="bg-white shadow">
-        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between">
-            <h1 className="text-3xl font-bold text-gray-900">대시보드</h1>
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-600">
-                환영합니다, {user?.name}님
-              </span>
-              <Button variant="outline" onClick={handleLogout}>
-                로그아웃
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
+      {/* Header 컴포넌트 */}
+      <Header
+        logoText="Next Starter"
+        logoHref="/"
+        menuItems={menuItems}
+        userName={user?.name || 'User'}
+        userEmail={user?.email || 'user@example.com'}
+        notificationCount={5}
+        onLogout={handleLogout}
+      />
 
       {/* 탭 네비게이션 */}
       <div className="border-b border-gray-200 bg-white">

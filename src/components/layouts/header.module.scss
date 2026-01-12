@@ -1,0 +1,522 @@
+/**
+ * Header 컴포넌트 스타일
+ *
+ * 왜 SCSS Module을 사용하는가?
+ * - 스코프 격리: 클래스명 충돌 방지
+ * - 변수/믹스인: 재사용 가능한 스타일
+ * - 중첩: 구조를 명확하게 표현
+ */
+
+@use '@/app/variables' as *;
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+  padding: 0 24px;
+  background-color: #ffffff;
+  border-bottom: 1px solid $color-gray-200;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+
+  // 반응형
+  @include responsive(tablet) {
+    padding: 0 16px;
+  }
+
+  @include responsive(mobile) {
+    height: 56px;
+    padding: 0 12px;
+  }
+}
+
+// ==================== 좌측: 로고 영역 ====================
+.logoSection {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 16px;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 20px;
+  font-weight: 700;
+  color: $color-primary;
+  text-decoration: none;
+  cursor: pointer;
+  transition: opacity 0.2s;
+
+  &:hover {
+    opacity: 0.8;
+  }
+
+  @include responsive(mobile) {
+    font-size: 18px;
+  }
+}
+
+.logoIcon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, $color-primary, $color-primary-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 700;
+  font-size: 16px;
+
+  @include responsive(mobile) {
+    width: 28px;
+    height: 28px;
+    font-size: 14px;
+  }
+}
+
+// ==================== 중앙: 메뉴 영역 ====================
+.menuSection {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  margin: 0 32px;
+  gap: 4px;
+
+  @include responsive(tablet) {
+    display: none; // 태블릿/모바일에서는 햄버거 메뉴로 대체
+  }
+}
+
+.menuDivider {
+  width: 1px;
+  height: 20px;
+  background-color: $color-gray-300;
+  margin: 0 8px;
+}
+
+.menuItem {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  color: $color-gray-700;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.2s;
+  white-space: nowrap;
+
+  &:hover {
+    background-color: $color-gray-100;
+    color: $color-primary;
+  }
+
+  &.active {
+    color: $color-primary;
+    background-color: $color-primary-light;
+  }
+}
+
+.menuItemText {
+  user-select: none;
+}
+
+.dropdownIcon {
+  font-size: 12px;
+  transition: transform 0.2s;
+
+  &.open {
+    transform: rotate(180deg);
+  }
+}
+
+// 드롭다운 메뉴
+.dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  min-width: 180px;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: $shadow-lg;
+  padding: 8px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-10px);
+  transition: all 0.2s;
+  z-index: 1000;
+
+  &.open {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+  }
+}
+
+.dropdownItem {
+  display: block;
+  padding: 10px 12px;
+  font-size: 14px;
+  color: $color-gray-700;
+  text-decoration: none;
+  border-radius: 6px;
+  transition: all 0.2s;
+  cursor: pointer;
+
+  &:hover {
+    background-color: $color-gray-100;
+    color: $color-primary;
+  }
+
+  &.active {
+    background-color: $color-primary-light;
+    color: $color-primary;
+    font-weight: 500;
+  }
+}
+
+// ==================== 우측: 액션 영역 ====================
+.actionsSection {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.actionButton {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  color: $color-gray-600;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+  background: transparent;
+
+  &:hover {
+    background-color: $color-gray-100;
+    color: $color-primary;
+  }
+
+  &.active {
+    background-color: $color-primary-light;
+    color: $color-primary;
+  }
+
+  @include responsive(mobile) {
+    width: 32px;
+    height: 32px;
+  }
+}
+
+.actionIcon {
+  font-size: 18px;
+
+  @include responsive(mobile) {
+    font-size: 16px;
+  }
+}
+
+// 뱃지 (알림 개수 표시)
+.badge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  background-color: $color-error;
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid white;
+
+  @include responsive(mobile) {
+    top: 4px;
+    right: 4px;
+    min-width: 16px;
+    height: 16px;
+    font-size: 10px;
+  }
+}
+
+// 프로필 아이콘
+.profileButton {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+  background: transparent;
+
+  &:hover {
+    background-color: $color-gray-100;
+  }
+}
+
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, $color-primary, $color-primary-dark);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 14px;
+  flex-shrink: 0;
+
+  img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+
+  @include responsive(mobile) {
+    width: 28px;
+    height: 28px;
+    font-size: 12px;
+  }
+}
+
+.userName {
+  font-size: 14px;
+  font-weight: 500;
+  color: $color-gray-700;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  @include responsive(tablet) {
+    display: none;
+  }
+}
+
+// 프로필 드롭다운
+.profileDropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 240px;
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: $shadow-lg;
+  padding: 8px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-10px);
+  transition: all 0.2s;
+  z-index: 1000;
+
+  &.open {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+  }
+}
+
+.profileInfo {
+  padding: 12px;
+  border-bottom: 1px solid $color-gray-200;
+  margin-bottom: 8px;
+}
+
+.profileName {
+  font-size: 15px;
+  font-weight: 600;
+  color: $color-gray-900;
+  margin-bottom: 4px;
+}
+
+.profileEmail {
+  font-size: 13px;
+  color: $color-gray-600;
+}
+
+.profileMenuItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  font-size: 14px;
+  color: $color-gray-700;
+  border-radius: 6px;
+  transition: all 0.2s;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+
+  &:hover {
+    background-color: $color-gray-100;
+    color: $color-primary;
+  }
+
+  &.danger {
+    color: $color-error;
+
+    &:hover {
+      background-color: rgba($color-error, 0.1);
+      color: $color-error;
+    }
+  }
+}
+
+.profileMenuIcon {
+  font-size: 16px;
+  width: 20px;
+  text-align: center;
+}
+
+// ==================== 모바일 햄버거 메뉴 ====================
+.mobileMenuButton {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  color: $color-gray-600;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+  background: transparent;
+
+  &:hover {
+    background-color: $color-gray-100;
+  }
+
+  @include responsive(tablet) {
+    display: flex;
+  }
+}
+
+.hamburgerIcon {
+  font-size: 20px;
+}
+
+// 모바일 메뉴 오버레이
+.mobileMenuOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s;
+
+  &.open {
+    opacity: 1;
+    visibility: visible;
+  }
+}
+
+.mobileMenu {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 280px;
+  height: 100%;
+  background-color: white;
+  padding: 24px;
+  z-index: 1000;
+  transform: translateX(-100%);
+  transition: transform 0.3s;
+  overflow-y: auto;
+
+  &.open {
+    transform: translateX(0);
+  }
+}
+
+.mobileMenuHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid $color-gray-200;
+}
+
+.closeButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  color: $color-gray-600;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+  background: transparent;
+
+  &:hover {
+    background-color: $color-gray-100;
+  }
+}
+
+.mobileMenuItem {
+  padding: 12px 0;
+  font-size: 15px;
+  font-weight: 500;
+  color: $color-gray-700;
+  border-bottom: 1px solid $color-gray-100;
+  cursor: pointer;
+
+  &:hover {
+    color: $color-primary;
+  }
+
+  &.active {
+    color: $color-primary;
+  }
+}
+
+.mobileSubMenu {
+  padding-left: 16px;
+  margin-top: 8px;
+}
+
+.mobileSubMenuItem {
+  padding: 8px 0;
+  font-size: 14px;
+  color: $color-gray-600;
+  cursor: pointer;
+
+  &:hover {
+    color: $color-primary;
+  }
+
+  &.active {
+    color: $color-primary;
+    font-weight: 500;
+  }
+}

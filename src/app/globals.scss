@@ -20,10 +20,24 @@
 
 // 색상 변수
 $color-primary: #3b82f6;
+$color-primary-light: #dbeafe;
+$color-primary-dark: #2563eb;
 $color-secondary: #8b5cf6;
 $color-success: #10b981;
 $color-warning: #f59e0b;
 $color-danger: #ef4444;
+$color-error: #ef4444;
+
+// 그레이 스케일
+$color-gray-100: #f3f4f6;
+$color-gray-200: #e5e7eb;
+$color-gray-300: #d1d5db;
+$color-gray-400: #9ca3af;
+$color-gray-500: #6b7280;
+$color-gray-600: #4b5563;
+$color-gray-700: #374151;
+$color-gray-800: #1f2937;
+$color-gray-900: #111827;
 
 // 간격 변수
 $spacing-xs: 0.25rem;
@@ -42,6 +56,12 @@ $breakpoint-xl: 1280px;
 $transition-fast: 150ms ease-in-out;
 $transition-base: 300ms ease-in-out;
 $transition-slow: 500ms ease-in-out;
+
+// 그림자 변수
+$shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+$shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+$shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+$shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
 
 /**
  * SCSS 믹스인
@@ -68,6 +88,23 @@ $transition-slow: 500ms ease-in-out;
     }
   } @else if $breakpoint == 'xl' {
     @media (min-width: $breakpoint-xl) {
+      @content;
+    }
+  }
+}
+
+// 반응형 믹스인 (max-width 기반, 모바일 우선)
+@mixin responsive($breakpoint) {
+  @if $breakpoint == 'mobile' {
+    @media (max-width: $breakpoint-sm - 1px) {
+      @content;
+    }
+  } @else if $breakpoint == 'tablet' {
+    @media (max-width: $breakpoint-lg - 1px) {
+      @content;
+    }
+  } @else if $breakpoint == 'desktop' {
+    @media (min-width: $breakpoint-lg) {
       @content;
     }
   }
