@@ -147,10 +147,14 @@ export const useApiClient = <T = unknown>(): UseApiClientReturn<T> => {
 
   /**
    * GET 요청 - apiClient.get을 래핑
+   *
+   * 왜 bind가 필요 없는가?
+   * - apiClient의 메서드들은 화살표 함수로 정의됨
+   * - 화살표 함수는 렉시컬 스코프를 사용하여 this가 자동 바인딩됨
    */
   const get = useCallback(
     (url: string, data?: unknown, options?: RequestOptions) => {
-      return request(apiClient.get.bind(apiClient), url, data, options);
+      return request(apiClient.get, url, data, options);
     },
     [request]
   );
@@ -160,7 +164,7 @@ export const useApiClient = <T = unknown>(): UseApiClientReturn<T> => {
    */
   const post = useCallback(
     (url: string, data?: unknown, options?: RequestOptions) => {
-      return request(apiClient.post.bind(apiClient), url, data, options);
+      return request(apiClient.post, url, data, options);
     },
     [request]
   );
@@ -170,7 +174,7 @@ export const useApiClient = <T = unknown>(): UseApiClientReturn<T> => {
    */
   const put = useCallback(
     (url: string, data?: unknown, options?: RequestOptions) => {
-      return request(apiClient.put.bind(apiClient), url, data, options);
+      return request(apiClient.put, url, data, options);
     },
     [request]
   );
@@ -184,7 +188,7 @@ export const useApiClient = <T = unknown>(): UseApiClientReturn<T> => {
    */
   const del = useCallback(
     (url: string, data?: unknown, options?: RequestOptions) => {
-      return request(apiClient.delete.bind(apiClient), url, data, options);
+      return request(apiClient.delete, url, data, options);
     },
     [request]
   );
@@ -194,7 +198,7 @@ export const useApiClient = <T = unknown>(): UseApiClientReturn<T> => {
    */
   const patch = useCallback(
     (url: string, data?: unknown, options?: RequestOptions) => {
-      return request(apiClient.patch.bind(apiClient), url, data, options);
+      return request(apiClient.patch, url, data, options);
     },
     [request]
   );
