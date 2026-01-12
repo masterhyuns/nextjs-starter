@@ -1,238 +1,402 @@
 # Next Clean Starter
 
-Clean Architecture와 SOLID 원칙을 적용한 프로덕션 준비 완료 Next.js 스타터 템플릿
+프론트엔드 전용 아키텍처를 적용한 프로덕션 준비 완료 Next.js 스타터 템플릿
 
 ## 🎯 주요 특징
 
-- ✅ **Clean Architecture**: 도메인 중심 설계로 비즈니스 로직과 프레임워크 분리
-- ✅ **SOLID 원칙**: 유지보수 가능하고 확장 가능한 코드 구조
-- ✅ **TypeScript**: 엄격한 타입 검사로 안정성 확보
-- ✅ **Zustand**: 경량하고 강력한 상태 관리
+- ✅ **단순하고 명확한 구조**: 엔티티 기반 모듈화 (10개 → 4개 폴더로 단순화)
+- ✅ **타입 안전성**: TypeScript 엄격 모드로 런타임 에러 방지
+- ✅ **Zustand**: 경량하고 강력한 상태 관리 (Redux 대비 보일러플레이트 최소화)
 - ✅ **React Hook Form + Zod**: 타입 안전한 폼 관리 및 유효성 검증
-- ✅ **Tailwind CSS**: 유틸리티 우선 CSS 프레임워크
-- ✅ **인증 시스템**: Public/Private 라우트 구분
-- ✅ **탭 기능**: Zustand 기반 단일 페이지 탭 관리
-- ✅ **모달 시스템**: 중앙 집중식 모달 상태 관리
+- ✅ **Tailwind CSS + SCSS**: 유틸리티 클래스와 강력한 스타일링의 조합
+- ✅ **SSR 인증**: 번쩍거림 없는 서버 사이드 라우트 가드
+- ✅ **재사용 가능한 컴포넌트**: forwardRef 기반 UI 라이브러리
+- ✅ **탭 & 모달 시스템**: 중앙 집중식 상태 관리
 
 ## 📁 프로젝트 구조
 
 ```
 src/
-├── domain/                   # 도메인 레이어 (비즈니스 로직)
-│   ├── entities/            # 엔티티 (User, Product 등)
-│   ├── repositories/        # Repository 인터페이스 (DIP)
-│   └── use-cases/           # 비즈니스 유스케이스
+├── app/                     # Next.js App Router
+│   ├── globals.scss         # 전역 스타일 (Tailwind + SCSS)
+│   ├── layout.tsx           # Root Layout
+│   ├── page.tsx             # 홈 페이지
+│   ├── login/               # 로그인 페이지
+│   └── dashboard/           # 대시보드 (인증 필요)
 │
-├── application/             # 애플리케이션 레이어
-│   ├── stores/              # Zustand 상태 관리
-│   └── hooks/               # Custom React Hooks
+├── components/              # React 컴포넌트
+│   ├── ui/                  # 재사용 가능한 UI 컴포넌트
+│   │   ├── button.tsx
+│   │   ├── input.tsx
+│   │   ├── modal.tsx
+│   │   ├── select.tsx
+│   │   ├── checkbox.tsx
+│   │   ├── radio.tsx
+│   │   ├── textarea.tsx
+│   │   └── card.tsx
+│   └── providers/           # 전역 Provider
+│       ├── modal-provider.tsx
+│       └── auth-guard.tsx
 │
-├── infrastructure/          # 인프라 레이어
-│   ├── api/                 # API 클라이언트
-│   ├── storage/             # 로컬 스토리지
-│   └── repositories/        # Repository 구현체
+├── entities/                # 도메인 엔티티별 모듈
+│   └── auth/                # 인증 모듈
+│       ├── api.ts           # API 함수 (login, signup, logout 등)
+│       ├── types.ts         # 타입 정의 (User, LoginParams 등)
+│       ├── store.ts         # Zustand 스토어
+│       ├── utils.ts         # 유틸리티 (validation 등)
+│       └── index.ts         # export 통합
 │
-├── presentation/            # 프레젠테이션 레이어
-│   ├── components/          # React 컴포넌트
-│   │   ├── ui/              # 기본 UI (Button, Input 등)
-│   │   ├── forms/           # Form 컴포넌트
-│   │   ├── layouts/         # 레이아웃 컴포넌트
-│   │   └── providers/       # 전역 Provider
-│   ├── contexts/            # React Context
-│   └── middleware/          # 인증 미들웨어
+├── lib/                     # 공통 헬퍼
+│   ├── api-client.ts        # API 클라이언트 (Singleton)
+│   ├── storage.ts           # LocalStorage 추상화
+│   ├── cookie.ts            # Cookie 관리
+│   ├── types.ts             # 공통 타입 (ApiResponse, Pagination 등)
+│   ├── constants.ts         # 앱 설정 상수
+│   ├── utils.ts             # 공통 유틸 (cn, format 등)
+│   ├── modal.store.ts       # 모달 상태 관리
+│   └── tab.store.ts         # 탭 상태 관리
 │
-├── shared/                  # 공통 유틸리티
-│   ├── types/               # 공통 타입 정의
-│   ├── utils/               # 유틸 함수
-│   └── constants/           # 상수
+├── hooks/                   # Custom Hooks (예정)
 │
-└── app/                     # Next.js App Router
-    ├── globals.scss         # 전역 스타일 (Tailwind + SCSS)
-    ├── layout.tsx           # Root Layout
-    ├── page.tsx             # 홈 페이지
-    ├── login/               # 로그인 페이지
-    └── dashboard/           # 대시보드 (인증 필요)
+└── middleware.ts            # Next.js SSR 라우트 가드
 ```
 
 ### 📂 각 폴더 상세 설명
 
-#### 🎯 `domain/` - 도메인 레이어
-**핵심 비즈니스 로직을 담당하는 가장 중요한 레이어**
+#### 🌐 `entities/` - 도메인 엔티티별 모듈
+**비즈니스 도메인별로 관련된 모든 코드를 한 곳에 모음**
 
-- **`entities/`** - 비즈니스 엔티티 정의
-  - 순수한 비즈니스 객체 (User, Product, Order 등)
-  - 프레임워크에 독립적인 타입 정의
-  - 예: `user.entity.ts`, `product.entity.ts`
-  - **왜?** 비즈니스 규칙은 기술 스택 변경과 무관하게 유지되어야 함
+예시: `entities/auth/`
+- **`api.ts`** - 인증 API 함수
+  - login, signup, logout, refreshToken, getCurrentUser 등
+  - API 응답 처리 및 토큰 저장
+  - **왜?** 인증 관련 API 로직을 한 곳에 모아 유지보수 용이
 
-- **`repositories/`** - Repository 인터페이스
-  - 데이터 접근을 위한 추상화된 인터페이스 (DIP 적용)
-  - 실제 구현은 `infrastructure/repositories/`에 위치
-  - 예: `auth.repository.interface.ts`, `user.repository.interface.ts`
-  - **왜?** 도메인은 구현체가 아닌 인터페이스에 의존해야 함 (의존성 역전)
+- **`types.ts`** - 인증 관련 타입
+  - User, LoginParams, LoginResponse 등
+  - 백엔드 API 응답 구조와 일치
+  - **왜?** 타입을 도메인별로 관리하여 응집도 향상
 
-- **`use-cases/`** - 비즈니스 유스케이스
-  - 애플리케이션의 핵심 비즈니스 로직 구현
-  - 단일 책임 원칙(SRP)에 따라 하나의 유스케이스당 하나의 파일
-  - 예: `login.use-case.ts`, `get-user-info.use-case.ts`
-  - **왜?** 비즈니스 로직을 재사용 가능하고 테스트 가능한 단위로 분리
+- **`store.ts`** - Zustand 상태 관리
+  - user, isAuthenticated, status, error
+  - login(), logout(), loadUser() 액션
+  - **왜?** 상태와 API 호출을 한 곳에서 관리
 
----
+- **`utils.ts`** - 유틸리티 함수
+  - isValidEmail(), isValidPassword(), hasRole() 등
+  - 유효성 검증, 권한 체크, 포맷팅
+  - **왜?** 도메인 특화 로직을 분리
 
-#### 🔄 `application/` - 애플리케이션 레이어
-**UI 상태와 애플리케이션 흐름을 관리하는 레이어**
+- **`index.ts`** - export 통합
+  - 모든 기능을 하나의 import로 사용 가능
+  - 예: `import { useAuthStore, User, login } from '@/entities/auth'`
+  - **왜?** import 경로 단순화
 
-- **`stores/`** - Zustand 상태 관리
-  - 전역 상태 저장소 (auth, modal, tab 등)
-  - Persist 미들웨어로 로컬스토리지 자동 동기화
-  - 예: `auth.store.ts`, `modal.store.ts`, `tab.store.ts`
-  - **왜?** 컴포넌트 간 상태 공유와 영속성 관리를 중앙화
-
-- **`hooks/`** - Custom React Hooks
-  - 재사용 가능한 리액트 로직 캡슐화
-  - Store와 Use Case를 연결하는 브릿지 역할
-  - 예: `useAuth.ts`, `useModal.ts`, `useTab.ts`
-  - **왜?** 컴포넌트에서 비즈니스 로직을 분리하고 재사용성 향상
+**새 엔티티 추가 방법:**
+```bash
+# 예: Product 엔티티 추가
+mkdir src/entities/product
+touch src/entities/product/{api,types,store,utils,index}.ts
+```
 
 ---
 
-#### 🏗️ `infrastructure/` - 인프라 레이어
-**외부 시스템과의 연동을 담당하는 레이어**
+#### 📚 `lib/` - 공통 헬퍼
+**전역에서 사용되는 공통 유틸리티**
 
-- **`api/`** - API 클라이언트
-  - HTTP 요청을 위한 Fetch/Axios 래퍼
-  - Base URL, 인터셉터, 에러 핸들링 설정
-  - 예: `client.ts`, `interceptors.ts`
-  - **왜?** API 통신 로직을 중앙 집중화하여 유지보수성 향상
+- **`api-client.ts`** - API 클라이언트 (Singleton 패턴)
+  - Fetch 기반 HTTP 클라이언트
+  - 인증 토큰 자동 주입, 타임아웃 처리, 에러 핸들링
+  - **왜?** 모든 API 요청을 한 곳에서 관리하여 일관성 확보
 
-- **`storage/`** - 브라우저 스토리지 관리
-  - LocalStorage, SessionStorage, Cookie 추상화
-  - 타입 안전한 스토리지 접근 제공
-  - 예: `local-storage.ts`, `cookie.ts`
-  - **왜?** 브라우저 API를 추상화하여 테스트 가능하고 타입 안전한 코드 작성
+- **`storage.ts`** - LocalStorage 추상화
+  - 타입 안전한 localStorage 래퍼
+  - JSON 직렬화/역직렬화 자동 처리
+  - **왜?** 브라우저 API를 추상화하여 테스트 가능성 향상
 
-- **`repositories/`** - Repository 구현체
-  - `domain/repositories/` 인터페이스의 실제 구현
-  - API 호출, 데이터 변환, 에러 처리 로직 포함
-  - 예: `auth.repository.ts`, `user.repository.ts`
-  - **왜?** 인터페이스와 구현을 분리하여 테스트 용이성과 유연성 확보
+- **`cookie.ts`** - Cookie 관리
+  - SSR 인증을 위한 쿠키 설정/삭제
+  - **왜?** middleware에서 인증 체크를 위해 쿠키 필요
+
+- **`types.ts`** - 공통 타입
+  - ApiResponse<T>: 모든 API 응답의 공통 구조
+  - PaginationParams, AsyncState 등
+  - **왜?** 타입 재사용과 일관성 확보
+
+- **`constants.ts`** - 앱 설정 상수
+  - API_CONFIG, STORAGE_KEYS, ROUTES 등
+  - **왜?** 매직 넘버/매직 스트링 제거
+
+- **`utils.ts`** - 공통 유틸리티
+  - cn(): classnames 조합
+  - formatDate(), formatNumber() 등
+  - **왜?** 자주 사용되는 헬퍼 함수 중앙화
+
+- **`modal.store.ts`** / **`tab.store.ts`** - UI 상태 관리
+  - 전역 모달/탭 상태
+  - **왜?** 엔티티가 아닌 UI 기능이므로 lib에 배치
 
 ---
 
-#### 🎨 `presentation/` - 프레젠테이션 레이어
-**사용자 인터페이스를 담당하는 레이어**
+#### 🎨 `components/` - UI 컴포넌트
+**재사용 가능한 React 컴포넌트**
 
-- **`components/ui/`** - 기본 UI 컴포넌트
-  - 재사용 가능한 디자인 시스템 컴포넌트
+- **`ui/`** - 기본 UI 컴포넌트
   - forwardRef로 react-hook-form 호환
-  - 예: `button.tsx`, `input.tsx`, `modal.tsx`, `select.tsx`
-  - SCSS Module 사용 예시: `card.module.scss`, `card.tsx`
-  - **왜?** 일관된 디자인과 재사용성을 위한 컴포넌트 라이브러리 구축
+  - 타입 안전한 Props 인터페이스
+  - Tailwind + SCSS Module 하이브리드 스타일링
+  - **왜?** 일관된 디자인 시스템 구축
 
-- **`components/forms/`** - Form 컴포넌트
-  - React Hook Form + Zod를 활용한 폼 컴포넌트
-  - 유효성 검증이 포함된 비즈니스 폼
-  - 예: `login-form.tsx`, `signup-form.tsx`
-  - **왜?** 폼 로직을 컴포넌트로 캡슐화하여 재사용성 향상
-
-- **`components/layouts/`** - 레이아웃 컴포넌트
-  - 페이지 레이아웃 구조 컴포넌트
-  - Header, Footer, Sidebar 등
-  - 예: `main-layout.tsx`, `auth-layout.tsx`
-  - **왜?** 일관된 페이지 구조와 레이아웃 재사용
-
-- **`components/providers/`** - 전역 Provider
-  - Context Provider, Portal Provider 등
-  - 전역 상태 및 기능 제공
-  - 예: `modal-provider.tsx`, `auth-guard.tsx`
-  - **왜?** 전역 기능을 컴포넌트 트리에 주입하기 위한 Provider 패턴
-
-- **`contexts/`** - React Context
-  - React Context API를 활용한 상태 공유
-  - 테마, 언어 설정 등 전역 설정 관리
-  - **왜?** Props Drilling을 피하고 전역 상태를 효율적으로 관리
-
-- **`middleware/`** - 인증 미들웨어
-  - Next.js 미들웨어 (SSR 기반 라우트 가드)
-  - 인증 상태 확인 및 리다이렉트 처리
-  - 예: `src/middleware.ts`
-  - **왜?** 서버 사이드에서 인증을 처리하여 번쩍거림 없는 UX 제공
+- **`providers/`** - 전역 Provider
+  - `modal-provider.tsx`: React Portal로 모달 렌더링
+  - `auth-guard.tsx`: 클라이언트 사이드 인증 가드 (정적 배포용)
+  - **왜?** 전역 기능을 컴포넌트 트리에 주입
 
 ---
 
-#### 🔧 `shared/` - 공유 레이어
-**모든 레이어에서 사용 가능한 공통 유틸리티**
+## 🏗️ 적용된 아키텍처 패턴
 
-- **`types/`** - 공통 타입 정의
-  - 전역적으로 사용되는 TypeScript 타입/인터페이스
-  - API 응답 타입, 공통 유틸리티 타입
-  - 예: `api.types.ts`, `common.types.ts`
-  - **왜?** 타입을 중앙 집중화하여 일관성과 재사용성 확보
-
-- **`utils/`** - 유틸리티 함수
-  - 순수 함수 기반의 헬퍼 함수
-  - 날짜 포맷, 문자열 처리, 유효성 검사 등
-  - 예: `cn.ts` (classnames 유틸), `format.ts`, `validation.ts`
-  - **왜?** 반복되는 로직을 순수 함수로 분리하여 테스트 가능성 향상
-
-- **`constants/`** - 상수 정의
-  - 매직 넘버/문자열을 상수로 정의
-  - API 엔드포인트, 라우트 경로, 설정 값 등
-  - 예: `routes.ts`, `api-endpoints.ts`, `config.ts`
-  - **왜?** 하드코딩을 피하고 변경 사항을 한 곳에서 관리
-
----
-
-#### 📱 `app/` - Next.js App Router
-**Next.js 프레임워크의 라우팅 및 페이지 레이어**
-
-- **`globals.scss`** - 전역 스타일
-  - Tailwind CSS v4 설정 (`@import url('tailwindcss')`)
-  - SCSS 변수 (색상, 간격, 브레이크포인트, 전환 효과)
-  - SCSS 믹스인 (respond-to, flex-center, text-ellipsis, shadow)
-  - Tailwind 테마 커스터마이징 (`@theme`)
-  - **왜?** Tailwind의 유틸리티와 SCSS의 강력함을 동시에 활용
-
-- **`layout.tsx`** - Root Layout
-  - 전역 레이아웃 및 Provider 설정
-  - 폰트, 메타데이터, Modal Provider 등
-  - **왜?** 모든 페이지에 공통으로 적용되는 설정을 중앙화
-
-- **`page.tsx`** - 홈 페이지
-  - Public 접근 가능한 랜딩 페이지
-  - **왜?** 애플리케이션의 진입점
-
-- **`login/`** - 로그인 페이지
-  - 인증 라우트 (로그인 후 자동 리다이렉트)
-  - **왜?** 사용자 인증 흐름의 시작점
-
-- **`dashboard/`** - 대시보드
-  - Private 라우트 (인증 필요)
-  - 탭 기능, 모달 예시 포함
-  - **왜?** 인증된 사용자만 접근 가능한 주요 기능 영역
-
----
-
-### 🎯 레이어 간 의존성 규칙
+### 1. **엔티티 기반 모듈화**
 
 ```
-presentation → application → domain ← infrastructure
-     ↓              ↓           ↑
-  shared  ←  ←  ←  ←  ←  ←  ←
+entities/
+├── auth/          # 인증 도메인
+│   ├── api.ts
+│   ├── types.ts
+│   ├── store.ts
+│   └── utils.ts
+│
+├── user/          # 사용자 도메인 (예시)
+│   ├── api.ts
+│   ├── types.ts
+│   ├── store.ts
+│   └── utils.ts
+│
+└── product/       # 상품 도메인 (예시)
+    ├── api.ts
+    ├── types.ts
+    ├── store.ts
+    └── utils.ts
 ```
 
-**의존성 방향:**
-- `presentation`은 `application`, `domain`, `shared`에 의존
-- `application`은 `domain`, `shared`에 의존
-- `infrastructure`는 `domain`, `shared`에 의존 (인터페이스 구현)
-- `domain`은 `shared`만 의존 (가장 독립적)
-- `shared`는 아무것도 의존하지 않음 (최하위 레이어)
+**왜 이렇게 구성했는가?**
+- **높은 응집도**: 관련된 코드가 한 폴더에 모임
+- **낮은 결합도**: 엔티티 간 의존성 최소화
+- **확장 용이**: 새 기능 추가 시 entities/ 폴더만 추가
+- **직관적**: 폴더명이 비즈니스 도메인과 일치
 
-**왜 이렇게 설계했는가?**
-- **관심사의 분리**: 각 레이어가 명확한 책임을 가짐
-- **테스트 용이성**: 레이어별로 독립적인 테스트 가능
-- **유지보수성**: 한 레이어의 변경이 다른 레이어에 최소한의 영향
-- **확장성**: 새로운 기능 추가 시 명확한 위치 파악 가능
+---
+
+### 2. **적용된 디자인 패턴**
+
+#### 🔹 **Singleton 패턴** (`lib/api-client.ts`)
+```typescript
+export class ApiClient {
+  private static instance: ApiClient;
+
+  static getInstance = (): ApiClient => {
+    if (!ApiClient.instance) {
+      ApiClient.instance = new ApiClient();
+    }
+    return ApiClient.instance;
+  };
+}
+
+export const apiClient = ApiClient.getInstance();
+```
+
+**왜 사용했는가?**
+- API 클라이언트는 애플리케이션 전체에서 하나만 존재해야 함
+- 설정(Base URL, Timeout 등)을 공유
+- 메모리 효율성
+
+---
+
+#### 🔹 **Repository 패턴** (`entities/*/api.ts`)
+```typescript
+// entities/auth/api.ts
+export const login = async (params: LoginParams): Promise<ApiResponse<LoginResponse>> => {
+  const response = await apiClient.post<LoginResponse>('/auth/login', params);
+  // 토큰 저장 등 부가 로직
+  return response;
+};
+```
+
+**왜 사용했는가?**
+- 데이터 접근 로직을 캡슐화
+- API 엔드포인트 변경 시 한 곳만 수정
+- 테스트 시 Mock으로 쉽게 교체 가능
+
+---
+
+#### 🔹 **Facade 패턴** (`entities/*/store.ts`)
+```typescript
+export const useAuthStore = create<AuthStore>()(
+  persist(
+    (set) => ({
+      login: async (params) => {
+        set({ status: 'loading' });
+        const result = await authAPI.login(params);
+        if (result.success) {
+          set({ user: result.data.user, isAuthenticated: true });
+        }
+      },
+    })
+  )
+);
+```
+
+**왜 사용했는가?**
+- 복잡한 API 호출 로직을 간단한 인터페이스로 제공
+- 컴포넌트는 `login()` 호출만 하면 됨 (내부 복잡도 숨김)
+- 상태 관리와 API 호출을 한 곳에서 처리
+
+---
+
+#### 🔹 **Observer 패턴** (Zustand 내부)
+```typescript
+const { user, login } = useAuthStore(); // 상태 구독
+```
+
+**왜 사용했는가?**
+- 상태 변경 시 자동으로 컴포넌트 리렌더링
+- React의 리렌더링 메커니즘과 완벽 통합
+- Props Drilling 제거
+
+---
+
+#### 🔹 **Strategy 패턴** (`entities/*/utils.ts`)
+```typescript
+export const isValidPassword = (password: string): boolean => {
+  // 다양한 검증 전략 조합
+  const hasUpperCase = /[A-Z]/.test(password);
+  const hasLowerCase = /[a-z]/.test(password);
+  const hasNumber = /\d/.test(password);
+  return hasUpperCase && hasLowerCase && hasNumber;
+};
+```
+
+**왜 사용했는가?**
+- 유효성 검증 로직을 독립적인 함수로 분리
+- 검증 규칙 변경 시 함수만 수정
+- 재사용 가능
+
+---
+
+#### 🔹 **Factory 패턴** (React 컴포넌트)
+```typescript
+export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ variant = 'primary', size = 'md', ...props }, ref) => {
+    // variant와 size에 따라 다른 스타일 적용
+    return <button ref={ref} className={cn(baseStyles, variantStyles[variant])} {...props} />;
+  }
+);
+```
+
+**왜 사용했는가?**
+- Props에 따라 다양한 버튼 생성
+- 일관된 인터페이스로 다양한 변형 제공
+
+---
+
+#### 🔹 **Adapter 패턴** (`lib/storage.ts`, `lib/cookie.ts`)
+```typescript
+export class LocalStorage {
+  static setItem = <T>(key: string, value: T): void => {
+    localStorage.setItem(key, JSON.stringify(value));
+  };
+
+  static getItem = <T>(key: string): T | null => {
+    const item = localStorage.getItem(key);
+    return item ? JSON.parse(item) : null;
+  };
+}
+```
+
+**왜 사용했는가?**
+- 브라우저 API를 타입 안전한 인터페이스로 변환
+- localStorage의 문자열 기반 API를 타입 안전하게 사용
+- 테스트 시 Mock으로 쉽게 교체
+
+---
+
+#### 🔹 **Portal 패턴** (`components/providers/modal-provider.tsx`)
+```typescript
+export const Modal = ({ isOpen, children }: ModalProps) => {
+  if (!isOpen) return null;
+  return createPortal(
+    <div className="modal-overlay">{children}</div>,
+    document.body
+  );
+};
+```
+
+**왜 사용했는가?**
+- 모달을 DOM 트리의 최상위에 렌더링
+- z-index 문제 해결
+- 부모 컴포넌트의 스타일 영향 차단
+
+---
+
+### 3. **SOLID 원칙 적용**
+
+#### 🔹 **Single Responsibility Principle (SRP)**
+- 각 파일/함수는 하나의 책임만 가짐
+- 예: `api.ts`는 API 호출만, `utils.ts`는 유틸리티만
+
+#### 🔹 **Open/Closed Principle (OCP)**
+- 확장에는 열려있고 수정에는 닫혀있음
+- 예: 새로운 엔티티 추가 시 기존 코드 수정 불필요
+
+#### 🔹 **Liskov Substitution Principle (LSP)**
+- 타입 시스템을 통해 자동으로 보장됨
+- 예: `ApiResponse<T>` 제네릭 타입
+
+#### 🔹 **Interface Segregation Principle (ISP)**
+- 필요한 인터페이스만 사용
+- 예: 컴포넌트는 필요한 Props만 받음
+
+#### 🔹 **Dependency Inversion Principle (DIP)**
+- 구체적인 구현이 아닌 추상화에 의존
+- 예: Store는 API 함수에 의존 (구현 세부사항은 api 레이어에 숨김)
+
+---
+
+### 4. **기타 설계 원칙**
+
+#### 🔹 **DRY (Don't Repeat Yourself)**
+- 공통 타입: `lib/types.ts`
+- 공통 유틸: `lib/utils.ts`
+- 재사용 컴포넌트: `components/ui/`
+
+#### 🔹 **KISS (Keep It Simple, Stupid)**
+- 엔티티 기반으로 단순화 (10개 폴더 → 4개 폴더)
+- 직관적인 폴더 구조
+
+#### 🔹 **YAGNI (You Aren't Gonna Need It)**
+- 현재 필요한 기능만 구현
+- 추상화 레이어 최소화
+
+---
+
+### 5. **이전 Clean Architecture와 비교**
+
+#### ✅ **왜 단순화했는가?**
+
+| 이전 구조 | 새 구조 | 이유 |
+|---------|--------|------|
+| api/ + types/ + stores/ + lib/ (4개 분리) | entities/auth/ (1개 통합) | 관련 코드 응집 |
+| 10개 최상위 폴더 | 4개 최상위 폴더 | 탐색 용이 |
+| import 경로 복잡 | import 경로 단순 | 개발 속도 향상 |
+| 파일 찾기 어려움 | 도메인별로 명확 | 유지보수성 향상 |
+
+#### ✅ **유지된 장점**
+- ✅ 타입 안전성
+- ✅ 테스트 가능성
+- ✅ 관심사 분리
+- ✅ 확장 가능성
+
+---
 
 ## 🚀 시작하기
 
@@ -255,39 +419,121 @@ pnpm dev
 - 이메일: `test@example.com`
 - 비밀번호: `Password123!`
 
-## 📖 주요 개념
+### 4. 백엔드 API 연동
 
-### Clean Architecture 레이어
+**Mock 데이터 제거 및 실제 API 연동 방법:**
 
-1. **Domain Layer** (도메인 레이어)
-   - 비즈니스 로직과 규칙
-   - 프레임워크에 독립적
+1. `.env.local` 파일 생성:
+```bash
+NEXT_PUBLIC_API_BASE_URL=https://your-api.com
+NEXT_PUBLIC_API_TIMEOUT=30000
+```
 
-2. **Application Layer** (애플리케이션 레이어)
-   - 애플리케이션 흐름 제어
-   - UI 상태 관리
-
-3. **Infrastructure Layer** (인프라 레이어)
-   - 외부 시스템 연동
-   - API, Database, Storage
-
-4. **Presentation Layer** (프레젠테이션 레이어)
-   - UI 렌더링
-   - React 컴포넌트
-
-### Dependency Inversion Principle (DIP)
-
+2. `src/entities/auth/api.ts` 수정:
 ```typescript
-// 도메인은 인터페이스만 의존
-export interface IAuthRepository {
-  login(params: LoginParams): Promise<ApiResponse<LoginResponse>>;
+// TODO 주석 제거하고 실제 API 호출 활성화
+const response = await apiClient.post<LoginResponse>('/auth/login', params);
+```
+
+3. `src/entities/auth/types.ts` 파일을 백엔드 API 스펙에 맞게 수정
+
+---
+
+## 📝 새 엔티티 추가하기
+
+예: Product 엔티티 추가
+
+### 1. 폴더 구조 생성
+```bash
+mkdir -p src/entities/product
+```
+
+### 2. 파일 생성
+```bash
+touch src/entities/product/{api,types,store,utils,index}.ts
+```
+
+### 3. `types.ts` 작성
+```typescript
+export interface Product {
+  id: string;
+  name: string;
+  price: number;
 }
 
-// 인프라가 구체적인 구현 제공
-export class AuthRepository implements IAuthRepository {
-  login = async (params) => { /* 실제 구현 */ };
+export interface CreateProductParams {
+  name: string;
+  price: number;
 }
 ```
+
+### 4. `api.ts` 작성
+```typescript
+import { apiClient } from '@/lib/api-client';
+import type { ApiResponse } from '@/lib/types';
+import type { Product, CreateProductParams } from './types';
+
+export const getProducts = async (): Promise<ApiResponse<Product[]>> => {
+  return apiClient.get<Product[]>('/products');
+};
+
+export const createProduct = async (params: CreateProductParams): Promise<ApiResponse<Product>> => {
+  return apiClient.post<Product>('/products', params);
+};
+```
+
+### 5. `store.ts` 작성
+```typescript
+import { create } from 'zustand';
+import type { Product } from './types';
+import * as productAPI from './api';
+
+interface ProductStore {
+  products: Product[];
+  fetchProducts: () => Promise<void>;
+}
+
+export const useProductStore = create<ProductStore>()((set) => ({
+  products: [],
+  fetchProducts: async () => {
+    const result = await productAPI.getProducts();
+    if (result.success) {
+      set({ products: result.data || [] });
+    }
+  },
+}));
+```
+
+### 6. `index.ts` 작성
+```typescript
+export * from './api';
+export * from './types';
+export * from './store';
+export * from './utils';
+```
+
+### 7. 사용
+```typescript
+import { useProductStore, Product } from '@/entities/product';
+
+const ProductList = () => {
+  const { products, fetchProducts } = useProductStore();
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  return (
+    <div>
+      {products.map((product) => (
+        <div key={product.id}>{product.name}</div>
+      ))}
+    </div>
+  );
+};
+```
+
+---
 
 ## 🧪 테스트
 
@@ -304,13 +550,11 @@ pnpm start
 
 ## 📚 참고 자료
 
-- [Clean Architecture](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)
-- [SOLID Principles](https://en.wikipedia.org/wiki/SOLID)
 - [Next.js Documentation](https://nextjs.org/docs)
 - [Zustand](https://github.com/pmndrs/zustand)
+- [React Hook Form](https://react-hook-form.com/)
+- [Zod](https://zod.dev/)
 
 ## 📄 라이선스
 
 MIT License
-
-(demo: admin@example.com / Admin123!)

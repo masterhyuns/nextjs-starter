@@ -15,9 +15,9 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useAuthStore } from '@/application/stores/auth.store';
-import { Button } from '@/presentation/components/ui/button';
-import { Input } from '@/presentation/components/ui/input';
+import { useAuthStore } from '@/entities/auth';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import Link from 'next/link';
 
 /**

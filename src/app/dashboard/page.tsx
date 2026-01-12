@@ -8,10 +8,10 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuthStore } from '@/application/stores/auth.store';
-import { useTabStore } from '@/application/stores/tab.store';
-import { useModalStore } from '@/application/stores/modal.store';
-import { Button } from '@/presentation/components/ui/button';
+import { useAuthStore } from '@/entities/auth';
+import { useTabStore } from '@/lib/tab.store';
+import { useModalStore } from '@/lib/modal.store';
+import { Button } from '@/components/ui/button';
 
 export default function DashboardPage() {
   const router = useRouter();
