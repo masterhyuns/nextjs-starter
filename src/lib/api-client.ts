@@ -23,7 +23,7 @@ type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
 /**
  * API 요청 옵션
  */
-interface RequestOptions extends RequestInit {
+export interface RequestOptions extends RequestInit {
   /** 인증 토큰 포함 여부 */
   auth?: boolean;
   /** 타임아웃 (밀리초) */
