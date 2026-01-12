@@ -21,11 +21,6 @@ import { API_CONFIG, STORAGE_KEYS } from './constants';
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
 
 /**
- * Query String 파라미터 타입
- */
-type QueryParams = Record<string, string | number | boolean | undefined | null>;
-
-/**
  * API 요청 옵션
  */
 interface RequestOptions extends RequestInit {
@@ -33,8 +28,6 @@ interface RequestOptions extends RequestInit {
   auth?: boolean;
   /** 타임아웃 (밀리초) */
   timeout?: number;
-  /** GET 요청 시 query string 파라미터 (자동으로 URL에 붙음) */
-  params?: QueryParams;
 }
 
 /**
@@ -70,13 +63,21 @@ export class ApiClient {
 
   /**
    * GET 요청
+   *
+   * @param url - 요청 URL
+   * @param data - Query String 파라미터 (자동으로 ?key=value 형태로 변환)
+   * @param options - 추가 옵션
    */
-  get = async <T>(url: string, options?: RequestOptions): Promise<ApiResponse<T>> => {
-    return this.request<T>(url, 'GET', undefined, options);
+  get = async <T>(url: string, data?: unknown, options?: RequestOptions): Promise<ApiResponse<T>> => {
+    return this.request<T>(url, 'GET', data, options);
   };
 
   /**
    * POST 요청
+   *
+   * @param url - 요청 URL
+   * @param data - Request Body (JSON으로 전송)
+   * @param options - 추가 옵션
    */
   post = async <T>(url: string, data?: unknown, options?: RequestOptions): Promise<ApiResponse<T>> => {
     return this.request<T>(url, 'POST', data, options);
@@ -84,6 +85,10 @@ export class ApiClient {
 
   /**
    * PUT 요청
+   *
+   * @param url - 요청 URL
+   * @param data - Request Body (JSON으로 전송)
+   * @param options - 추가 옵션
    */
   put = async <T>(url: string, data?: unknown, options?: RequestOptions): Promise<ApiResponse<T>> => {
     return this.request<T>(url, 'PUT', data, options);
@@ -91,13 +96,21 @@ export class ApiClient {
 
   /**
    * DELETE 요청
+   *
+   * @param url - 요청 URL
+   * @param data - Query String 파라미터 (자동으로 ?key=value 형태로 변환)
+   * @param options - 추가 옵션
    */
-  delete = async <T>(url: string, options?: RequestOptions): Promise<ApiResponse<T>> => {
-    return this.request<T>(url, 'DELETE', undefined, options);
+  delete = async <T>(url: string, data?: unknown, options?: RequestOptions): Promise<ApiResponse<T>> => {
+    return this.request<T>(url, 'DELETE', data, options);
   };
 
   /**
    * PATCH 요청
+   *
+   * @param url - 요청 URL
+   * @param data - Request Body (JSON으로 전송)
+   * @param options - 추가 옵션
    */
   patch = async <T>(url: string, data?: unknown, options?: RequestOptions): Promise<ApiResponse<T>> => {
     return this.request<T>(url, 'PATCH', data, options);
@@ -107,7 +120,7 @@ export class ApiClient {
    * Query String 생성
    *
    * 왜 필요한가?
-   * - GET 요청 시 파라미터를 객체로 전달 가능
+   * - GET/DELETE 요청 시 data를 query string으로 자동 변환
    * - URLSearchParams를 사용하여 자동 인코딩
    * - undefined, null 값은 자동으로 제외
    *
@@ -115,8 +128,13 @@ export class ApiClient {
    * buildQueryString({ page: 1, limit: 10, search: 'test' })
    * // => "?page=1&limit=10&search=test"
    */
-  private buildQueryString = (params?: QueryParams): string => {
-    if (!params || Object.keys(params).length === 0) {
+  private buildQueryString = (data?: unknown): string => {
+    if (!data || typeof data !== 'object' || Array.isArray(data)) {
+      return '';
+    }
+
+    const params = data as Record<string, unknown>;
+    if (Object.keys(params).length === 0) {
       return '';
     }
 
@@ -140,6 +158,10 @@ export class ApiClient {
    * - 내부 구현 캡슐화
    * - GET, POST 등의 메서드를 통해서만 호출
    * - 일관된 인터페이스 제공
+   *
+   * data 처리 방식:
+   * - GET, DELETE: data를 query string으로 변환 (?key=value)
+   * - POST, PUT, PATCH: data를 request body로 전송 (JSON)
    */
   private request = async <T>(
     url: string,
@@ -147,10 +169,10 @@ export class ApiClient {
     data?: unknown,
     options?: RequestOptions
   ): Promise<ApiResponse<T>> => {
-    // Query String 추가 (GET, DELETE 요청 시)
+    // 1. GET/DELETE는 data를 query string으로 변환
     let finalURL = url;
-    if ((method === 'GET' || method === 'DELETE') && options?.params) {
-      const queryString = this.buildQueryString(options.params);
+    if ((method === 'GET' || method === 'DELETE') && data) {
+      const queryString = this.buildQueryString(data);
       finalURL = `${url}${queryString}`;
     }
 
@@ -158,34 +180,34 @@ export class ApiClient {
     const timeout = options?.timeout || this.defaultTimeout;
 
     try {
-      // 1. 요청 헤더 설정
+      // 2. 요청 헤더 설정
       const headers = this.buildHeaders(options?.auth ?? true);
 
-      // 2. 요청 옵션 구성
+      // 3. 요청 옵션 구성
       const requestOptions: RequestInit = {
         method,
         headers,
         ...options,
       };
 
-      // 3. 바디 추가 (GET, DELETE 제외)
+      // 4. POST/PUT/PATCH는 data를 body로 추가
       if (data && method !== 'GET' && method !== 'DELETE') {
         requestOptions.body = JSON.stringify(data);
       }
 
-      // 4. 타임아웃 처리
+      // 5. 타임아웃 처리
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), timeout);
       requestOptions.signal = controller.signal;
 
-      // 5. 요청 실행
+      // 6. 요청 실행
       const response = await fetch(fullURL, requestOptions);
       clearTimeout(timeoutId);
 
-      // 6. 응답 처리
+      // 7. 응답 처리
       return await this.handleResponse<T>(response);
     } catch (error) {
-      // 7. 에러 처리
+      // 8. 에러 처리
       return this.handleError<T>(error);
     }
   };
@@ -293,6 +315,12 @@ export class ApiClient {
 /**
  * API 클라이언트 싱글톤 인스턴스 내보내기
  *
+ * 왜 이렇게 설계했는가?
+ * - 모든 HTTP 메서드에서 data 파라미터 통일
+ * - GET/DELETE: data → query string 자동 변환
+ * - POST/PUT/PATCH: data → request body 자동 변환
+ * - 메서드별로 처리 방식을 외울 필요 없이 직관적으로 사용
+ *
  * 사용 예시:
  *
  * @example
@@ -301,28 +329,56 @@ export class ApiClient {
  * const response = await apiClient.get('/users');
  *
  * @example
- * // Query String 파라미터 사용
+ * // GET 요청 - Query String 자동 변환
  * const response = await apiClient.get('/users', {
- *   params: { page: 1, limit: 10, search: 'john' }
+ *   page: 1,
+ *   limit: 10,
+ *   search: 'john'
  * });
  * // => GET /users?page=1&limit=10&search=john
  *
  * @example
- * // POST 요청
+ * // POST 요청 - Request Body로 전송
  * const response = await apiClient.post('/users', {
  *   name: 'John Doe',
  *   email: 'john@example.com'
  * });
+ * // => POST /users
+ * // Body: { "name": "John Doe", "email": "john@example.com" }
  *
  * @example
- * // 인증 없이 요청
- * const response = await apiClient.get('/public/data', { auth: false });
- *
- * @example
- * // DELETE 요청에도 params 사용 가능
- * const response = await apiClient.delete('/users/1', {
- *   params: { soft: true }
+ * // PUT 요청 - Request Body로 전송
+ * const response = await apiClient.put('/users/1', {
+ *   name: 'Jane Doe'
  * });
- * // => DELETE /users/1?soft=true
+ * // => PUT /users/1
+ * // Body: { "name": "Jane Doe" }
+ *
+ * @example
+ * // DELETE 요청 - Query String 자동 변환
+ * const response = await apiClient.delete('/users/1', {
+ *   soft: true,
+ *   reason: 'spam'
+ * });
+ * // => DELETE /users/1?soft=true&reason=spam
+ *
+ * @example
+ * // 옵션 사용 (인증 제외, 타임아웃 설정)
+ * const response = await apiClient.get('/public/data', null, {
+ *   auth: false,
+ *   timeout: 5000
+ * });
+ *
+ * @example
+ * // 복잡한 검색 쿼리
+ * const response = await apiClient.get('/products', {
+ *   category: 'electronics',
+ *   minPrice: 100,
+ *   maxPrice: 1000,
+ *   inStock: true,
+ *   sort: 'price',
+ *   order: 'asc'
+ * });
+ * // => GET /products?category=electronics&minPrice=100&maxPrice=1000&inStock=true&sort=price&order=asc
  */
 export const apiClient = ApiClient.getInstance();

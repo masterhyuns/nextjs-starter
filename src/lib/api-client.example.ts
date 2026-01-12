@@ -25,21 +25,20 @@ export const getUsers = async () => {
 };
 
 /**
- * 2. Query String 파라미터 사용
+ * 2. Query String 파라미터 사용 (개선된 방식)
  *
  * 왜 이 방법을 사용하는가?
- * - URL을 직접 조합할 필요 없음
+ * - data 파라미터로 통일 (params 옵션 불필요)
+ * - GET 요청은 자동으로 query string으로 변환
  * - 자동으로 인코딩됨
  * - undefined, null 값은 자동으로 제외
  * - 타입 안전성 확보
  */
 export const getUsersWithPagination = async (page: number, limit: number, search?: string) => {
   const response = await apiClient.get('/users', {
-    params: {
-      page,
-      limit,
-      search, // undefined면 자동으로 제외됨
-    },
+    page,
+    limit,
+    search, // undefined면 자동으로 제외됨
   });
   // => GET /users?page=1&limit=10&search=john
 
@@ -51,15 +50,13 @@ export const getUsersWithPagination = async (page: number, limit: number, search
  */
 export const getUsersWithFilters = async () => {
   const response = await apiClient.get('/users', {
-    params: {
-      page: 1,
-      limit: 20,
-      sort: 'createdAt',
-      order: 'desc',
-      role: 'admin',
-      active: true,
-      search: '홍길동', // 자동으로 URL 인코딩됨
-    },
+    page: 1,
+    limit: 20,
+    sort: 'createdAt',
+    order: 'desc',
+    role: 'admin',
+    active: true,
+    search: '홍길동', // 자동으로 URL 인코딩됨
   });
   // => GET /users?page=1&limit=20&sort=createdAt&order=desc&role=admin&active=true&search=%ED%99%8D%EA%B8%B8%EB%8F%99
 
@@ -195,17 +192,16 @@ export const deleteUser = async (id: number) => {
 /**
  * 10. DELETE 요청 (Query String 사용)
  *
- * 왜 DELETE에 params를 사용하는가?
+ * 왜 DELETE에 data를 사용하는가?
  * - Soft Delete 플래그 전달
  * - 삭제 이유 전달
  * - 연관 데이터 삭제 옵션 전달
+ * - GET과 동일하게 query string으로 자동 변환
  */
 export const softDeleteUser = async (id: number, reason?: string) => {
   const response = await apiClient.delete(`/users/${id}`, {
-    params: {
-      soft: true,
-      reason,
-    },
+    soft: true,
+    reason,
   });
   // => DELETE /users/1?soft=true&reason=spam
 
@@ -220,7 +216,7 @@ export const softDeleteUser = async (id: number, reason?: string) => {
  * 11. 타임아웃 설정
  */
 export const getLargeData = async () => {
-  const response = await apiClient.get('/large-data', {
+  const response = await apiClient.get('/large-data', null, {
     timeout: 60000, // 60초
   });
 
@@ -231,7 +227,7 @@ export const getLargeData = async () => {
  * 12. 인증 없이 요청
  */
 export const getPublicPosts = async () => {
-  const response = await apiClient.get('/public/posts', {
+  const response = await apiClient.get('/public/posts', null, {
     auth: false, // Authorization 헤더 미포함
   });
 
@@ -353,9 +349,7 @@ export const fetchWithRetry = async <T>(
  * });
  */
 export const fetchUsers = async (page: number, limit: number) => {
-  const response = await apiClient.get<User[]>('/users', {
-    params: { page, limit },
-  });
+  const response = await apiClient.get<User[]>('/users', { page, limit });
 
   if (!response.success) {
     throw new Error(response.error);
@@ -410,9 +404,7 @@ interface PaginatedResponse<T> {
  * 19. 페이지네이션이 포함된 요청
  */
 export const fetchPaginatedUsers = async (params: PaginationParams) => {
-  const response = await apiClient.get<PaginatedResponse<User>>('/users', {
-    params,
-  });
+  const response = await apiClient.get<PaginatedResponse<User>>('/users', params);
 
   return response;
 };
@@ -434,13 +426,11 @@ interface SearchParams {
  */
 export const searchProducts = async (params: SearchParams) => {
   const response = await apiClient.get('/products/search', {
-    params: {
-      q: params.q,
-      category: params.category,
-      min_price: params.minPrice,
-      max_price: params.maxPrice,
-      in_stock: params.inStock,
-    },
+    q: params.q,
+    category: params.category,
+    min_price: params.minPrice,
+    max_price: params.maxPrice,
+    in_stock: params.inStock,
   });
   // => GET /products/search?q=laptop&category=electronics&min_price=500&max_price=2000&in_stock=true
 
