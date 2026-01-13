@@ -12,31 +12,44 @@ sequenceDiagram
     participant SSO as SSO Server
     participant Storage as sessionStorage
 
+    Note over User,Storage: [STEP 1] 초기 페이지 접속
     User->>App: 페이지 접속
     App->>Guard: 컴포넌트 렌더링
     Guard->>Store: loadUser() 호출
     Store->>Storage: auth_redirecting 체크
 
     alt 리다이렉트 플래그 없음
+        Note over Store,API: [STEP 2] 인증 상태 확인
         Store->>API: GET /api/user/me (mes-ticket 쿠키)
 
         alt 200 OK (인증 성공)
+            Note over API,User: [STEP 3-A] 인증 성공 경로
             API-->>Store: 사용자 정보 반환
             Store->>Storage: auth_redirecting 제거
             Store-->>Guard: isAuthenticated: true
             Guard-->>App: children 렌더링
             App-->>User: 페이지 표시
         else 401 Unauthorized (인증 실패)
+            Note over API,SSO: [STEP 3-B] SSO 로그인 필요
             API-->>Store: 401 응답
             Store->>Storage: auth_redirecting = 'true' 저장
             Store->>SSO: redirect to SSO<br/>(현재 URL 포함)
             SSO-->>User: 로그인 페이지 표시
             User->>SSO: 로그인 정보 입력
             SSO->>SSO: 인증 처리
+            Note over SSO,App: [STEP 4] SSO 인증 완료 후 복귀
             SSO->>App: 원래 URL로 리다이렉트<br/>(mes-ticket 쿠키 설정)
-            Note over App,Store: 1번부터 재시작<br/>(이제 유효한 쿠키 보유)
+            Note over App,Storage: [STEP 5] 다시 STEP 1부터 시작<br/>(이제 유효한 쿠키 보유)<br/>→ 이번엔 200 OK 반환됨
+            App->>Guard: 컴포넌트 렌더링
+            Guard->>Store: loadUser() 호출
+            Store->>API: GET /api/user/me (mes-ticket 쿠키 ✓)
+            API-->>Store: 200 OK + 사용자 정보
+            Store-->>Guard: isAuthenticated: true
+            Guard-->>App: children 렌더링
+            App-->>User: 페이지 표시
         end
     else 리다이렉트 플래그 있음 (무한 루프 방지)
+        Note over Store,App: [예외] 무한 루프 감지
         Store->>Storage: auth_redirecting 제거
         Store-->>Guard: isAuthenticated: false
         Guard-->>App: 로딩 화면 또는 에러 처리
