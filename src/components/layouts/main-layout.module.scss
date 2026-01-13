@@ -1,0 +1,56 @@
+/**
+ * MainLayout 스타일
+ *
+ * 왜 이렇게 구현했는가?
+ * - Flexbox로 Header와 Body를 수직 배치
+ * - 100vh, 100vw로 전체 화면 사용
+ * - Header는 자동 높이, Body는 나머지 공간 차지
+ * - Body만 overflow-y: auto로 스크롤 가능
+ * - overflow: hidden으로 전체 레이아웃 스크롤 방지
+ */
+
+.layout {
+  // 전체 화면 사용
+  width: 100vw;
+  height: 100vh;
+
+  // Flexbox로 Header와 Body 배치
+  display: flex;
+  flex-direction: column;
+
+  // 전체 레이아웃은 스크롤 없음 (Body만 스크롤)
+  overflow: hidden;
+
+  // 배경색
+  background-color: var(--background, #ffffff);
+}
+
+.body {
+  // 나머지 공간 모두 차지 (Header 높이를 제외한 공간)
+  flex: 1;
+
+  // Body만 스크롤 가능
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  // 부드러운 스크롤
+  scroll-behavior: smooth;
+
+  // 웹킷 스크롤바 스타일 (선택사항)
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: var(--background, #f1f1f1);
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: var(--border, #888);
+    border-radius: 4px;
+
+    &:hover {
+      background: var(--border-dark, #555);
+    }
+  }
+}

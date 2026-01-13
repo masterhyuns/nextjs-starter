@@ -15,7 +15,7 @@ import { useAuthStore } from '@/entities/auth';
 import { useTabStore } from '@/lib/tab.store';
 import { useModalStore } from '@/lib/modal.store';
 import { Button } from '@/components/ui/button';
-import { Header, type MenuItem } from '@/components/layouts/header';
+import { MainLayout, type MenuItem } from '@/components/layouts';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -166,18 +166,15 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header 컴포넌트 */}
-      <Header
-        logoText="Next Starter"
-        logoHref="/"
-        menuItems={menuItems}
-        userName={user?.name || 'User'}
-        userEmail={user?.email || 'user@example.com'}
-        notificationCount={5}
-        onLogout={handleLogout}
-      />
-
+    <MainLayout
+      logoText="Next Starter"
+      logoHref="/"
+      menuItems={menuItems}
+      userName={user?.name || 'User'}
+      userEmail={user?.email || 'user@example.com'}
+      notificationCount={5}
+      onLogout={handleLogout}
+    >
       {/* 탭 네비게이션 */}
       <div className="border-b border-gray-200 bg-white">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -210,7 +207,7 @@ export default function DashboardPage() {
       </div>
 
       {/* 탭 컨텐츠 */}
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <main className="bg-gray-50 mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         {activeTab === 'overview' && (
           <div className="space-y-6">
             <h2 className="text-2xl font-bold text-gray-900">개요</h2>
@@ -281,6 +278,6 @@ export default function DashboardPage() {
           </div>
         )}
       </main>
-    </div>
+    </MainLayout>
   );
 }
