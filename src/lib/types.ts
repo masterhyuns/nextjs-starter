@@ -205,3 +205,42 @@ export type EnvironmentVariables = {
   /** API 타임아웃 (ms) */
   NEXT_PUBLIC_API_TIMEOUT?: string;
 };
+
+/**
+ * HTTP 메서드 타입
+ */
+export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
+
+/**
+ * API 명세 타입
+ *
+ * 왜 필요한가?
+ * - entities 폴더의 api.ts에서 API 엔드포인트를 순수 객체로 정의
+ * - useApiClient.fetch()가 이 명세를 받아서 실행
+ * - URL, 메서드, 데이터, 변환 함수를 한 곳에 정의
+ *
+ * 사용 예시:
+ * ```typescript
+ * const authApi = {
+ *   login: (params: LoginParams) => ({
+ *     method: 'POST' as const,
+ *     url: '/auth/login',
+ *     data: params,
+ *   }),
+ * };
+ *
+ * // 컴포넌트에서
+ * const { fetch } = useApiClient<LoginResponse>();
+ * const result = await fetch(authApi.login({ email, password }));
+ * ```
+ */
+export type ApiSpec<TData = any, TResponse = any> = {
+  /** HTTP 메서드 */
+  method: HttpMethod;
+  /** API 엔드포인트 경로 */
+  url: string;
+  /** 요청 데이터 (POST, PUT, PATCH에서 사용) */
+  data?: TData;
+  /** 응답 데이터 변환 함수 (선택사항) */
+  transform?: (data: TResponse) => TResponse;
+};

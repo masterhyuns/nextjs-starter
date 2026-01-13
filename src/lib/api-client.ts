@@ -295,6 +295,27 @@ export class ApiClient {
 }
 
 /**
+ * baseURL을 지정하여 새로운 API 클라이언트 인스턴스 생성
+ *
+ * 왜 필요한가?
+ * - Store에서 EnvContext의 baseURL을 사용하기 위함
+ * - 런타임에 다른 baseURL로 요청해야 할 때 사용
+ *
+ * @param baseURL - API 기본 URL
+ * @returns ApiClient 인스턴스
+ *
+ * @example
+ * // Store에서 사용
+ * const client = createApiClient(baseURL);
+ * const result = await client.get('/api/user/me');
+ */
+export const createApiClient = (baseURL: string): ApiClient => {
+  const instance = new (ApiClient as any)(baseURL); // Singleton 우회하여 새 인스턴스 생성
+  (instance as any).baseURL = baseURL;
+  return instance;
+};
+
+/**
  * API 클라이언트 싱글톤 인스턴스 내보내기
  *
  * 왜 이렇게 설계했는가?

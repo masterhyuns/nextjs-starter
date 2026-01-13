@@ -20,8 +20,8 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { apiClient } from '../api-client';
-import type { ApiResponse } from '../types';
+import { apiClient, createApiClient } from '../api-client';
+import type { ApiResponse, ApiSpec } from '../types';
 import type { RequestOptions } from '../api-client';
 
 /**
@@ -42,6 +42,8 @@ interface ApiState<T> {
  * useApiClient 반환 타입
  */
 interface UseApiClientReturn<T> extends ApiState<T> {
+  /** API 명세 객체를 받아서 실행 (권장) */
+  fetch: (apiSpec: ApiSpec, baseURL?: string) => Promise<ApiResponse<T>>;
   /** GET 요청 */
   get: (url: string, data?: unknown, options?: RequestOptions) => Promise<ApiResponse<T>>;
   /** POST 요청 */
@@ -90,7 +92,7 @@ interface UseApiClientReturn<T> extends ApiState<T> {
  *   }
  * };
  */
-export const useApiClient = <T = unknown>(): UseApiClientReturn<T> => {
+export function useApiClient<T = unknown>(): UseApiClientReturn<T> {
   const [state, setState] = useState<ApiState<T>>({
     data: null,
     loading: false,
@@ -126,7 +128,7 @@ export const useApiClient = <T = unknown>(): UseApiClientReturn<T> => {
       // 3. 응답에 따라 상태 업데이트
       if (response.success) {
         setState({
-          data: response.data,
+          data: response.data ?? null,
           loading: false,
           error: null,
           statusCode: response.statusCode,
@@ -235,8 +237,114 @@ export const useApiClient = <T = unknown>(): UseApiClientReturn<T> => {
     }));
   }, []);
 
+  /**
+   * API 명세 객체를 받아서 실행 (권장 방식)
+   *
+   * 왜 이 방식을 권장하는가?
+   * - entities 폴더의 api.ts에서 API 명세를 순수 객체로 정의
+   * - URL, 메서드, 데이터를 한 곳에서 관리
+   * - 타입 안전성 확보
+   * - baseURL을 선택적으로 전달 가능 (EnvContext 사용)
+   *
+   * @example
+   * // entities/auth/api.ts
+   * export const authApi = {
+   *   login: (params: LoginParams) => ({
+   *     method: 'POST' as const,
+   *     url: '/auth/login',
+   *     data: params,
+   *   }),
+   * };
+   *
+   * // 컴포넌트에서
+   * const { fetch, loading } = useApiClient<LoginResponse>();
+   * const result = await fetch(authApi.login({ email, password }));
+   */
+  const fetch = useCallback(
+    async (apiSpec: ApiSpec, baseURL?: string): Promise<ApiResponse<T>> => {
+      // 1. 로딩 시작
+      setState((prev) => ({
+        ...prev,
+        loading: true,
+        error: null,
+      }));
+
+      try {
+        // 2. baseURL이 있으면 새로운 client 생성, 없으면 기본 apiClient 사용
+        const client = baseURL ? createApiClient(baseURL) : apiClient;
+
+        // 3. 메서드별 분기 처리
+        let response: ApiResponse<T>;
+
+        switch (apiSpec.method) {
+          case 'GET':
+            response = await client.get<T>(apiSpec.url, apiSpec.data);
+            break;
+          case 'POST':
+            response = await client.post<T>(apiSpec.url, apiSpec.data);
+            break;
+          case 'PUT':
+            response = await client.put<T>(apiSpec.url, apiSpec.data);
+            break;
+          case 'DELETE':
+            response = await client.delete<T>(apiSpec.url, apiSpec.data);
+            break;
+          case 'PATCH':
+            response = await client.patch<T>(apiSpec.url, apiSpec.data);
+            break;
+          default:
+            throw new Error(`Unsupported HTTP method: ${apiSpec.method}`);
+        }
+
+        // 4. transform 함수가 있으면 적용
+        if (apiSpec.transform && response.data) {
+          response.data = apiSpec.transform(response.data);
+        }
+
+        // 5. 성공 상태 업데이트
+        if (response.success) {
+          setState({
+            data: response.data || null,
+            loading: false,
+            error: null,
+            statusCode: response.statusCode,
+          });
+        } else {
+          // 6. 실패 상태 업데이트
+          setState({
+            data: null,
+            loading: false,
+            error: response.error || '알 수 없는 오류',
+            statusCode: response.statusCode,
+          });
+        }
+
+        return response;
+      } catch (error) {
+        // 7. 예외 처리
+        const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
+        setState({
+          data: null,
+          loading: false,
+          error: errorMessage,
+          statusCode: null,
+        });
+
+        // 에러를 ApiResponse 형식으로 반환
+        return {
+          success: false,
+          error: errorMessage,
+          statusCode: 500,
+          timestamp: new Date().toISOString(),
+        };
+      }
+    },
+    []
+  );
+
   return {
     ...state,
+    fetch,
     get,
     post,
     put,
@@ -245,7 +353,7 @@ export const useApiClient = <T = unknown>(): UseApiClientReturn<T> => {
     reset,
     setData,
   };
-};
+}
 
 /**
  * ==================== 타입 내보내기 ====================

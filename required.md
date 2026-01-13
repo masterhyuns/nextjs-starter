@@ -65,3 +65,30 @@
 5. useAuth 훅 제공
 
 
+## API 클라이언트 제안
+- api.ts 는 api 명세 용도
+```
+const getUsers = {
+    method: 'GET',
+    url : '/users/',
+    callback : (data) => {}
+}
+
+const getUser = (id: string) => {
+    method: 'GET',
+    url : '/users/',
+    data : {id}
+    callback : (data) => {}
+}
+```
+- 사용자 컴포넌트에서는
+```
+const {fetch} = useApiClient<User[]>()
+
+const init = async () => {
+    const user = fetch(getUsers())
+}
+
+useEffect(() => {init()} , [])
+```
+이런식으로 사용하는거지 useApiClient는 크게 바뀔껀 없고 apiClient 할때 useEnv 에서 받은 baseUrl을 같이 넣으면 될꺼 같고
