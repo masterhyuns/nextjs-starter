@@ -18,6 +18,7 @@ import { create } from 'zustand';
 import type { User, LoginParams, CreateUserParams } from './types';
 import * as authAPI from './api';
 import type { AsyncState } from '@/lib/types';
+import { AUTH_CONFIG } from '@/lib/constants';
 
 /**
  * 인증 스토어 상태 인터페이스
@@ -210,29 +211,59 @@ export const useAuthStore = create<AuthStore>()((set) => ({
        * - 앱 초기화 시
        * - 페이지 새로고침 후
        *
-       * 비즈니스 플로우:
-       * 1. 사용자 정보 API를 로딩한다
-       * 2. 로딩에 실패하면 통합인증 로그인페이지로 리다이렉트 한다
-       * 3. 정상적으로 로그인하면 사용자 정보를 Set한다
+       * SSO 인증 플로우:
+       * 1. GET /api/user/me 호출 (mes-ticket 쿠키 자동 전송)
+       * 2. 200 OK → 사용자 정보 저장
+       * 3. 401 Unauthorized → SSO 로그인 페이지로 리다이렉트
+       * 4. SSO 로그인 완료 → 원래 페이지로 복귀
+       *
+       * 무한 리다이렉트 방지:
+       * - sessionStorage로 리다이렉트 추적
+       * - SSO에서 돌아온 직후 재확인 방지
        */
       loadUser: async () => {
+        // 무한 리다이렉트 방지: 이미 리다이렉트 중이면 중단
+        if (typeof window !== 'undefined') {
+          const isRedirecting = sessionStorage.getItem('auth_redirecting');
+          if (isRedirecting === 'true') {
+            // SSO에서 돌아왔으나 여전히 401이면 리다이렉트 플래그 제거
+            sessionStorage.removeItem('auth_redirecting');
+          }
+        }
+
         set({ status: 'loading' });
 
         try {
           const result = await authAPI.getCurrentUser();
 
           if (result.success && result.data) {
-            // 성공: 사용자 정보 Set
+            // 200 OK: 사용자 정보 저장
             set({
               user: result.data,
               isAuthenticated: true,
               status: 'success',
             });
-          } else {
-            // 실패: 통합인증 로그인페이지로 리다이렉트
-            const integratedAuthUrl = process.env.NEXT_PUBLIC_INTEGRATED_AUTH_URL;
-            if (integratedAuthUrl && typeof window !== 'undefined') {
-              window.location.href = integratedAuthUrl;
+
+            // 리다이렉트 플래그 제거
+            if (typeof window !== 'undefined') {
+              sessionStorage.removeItem('auth_redirecting');
+            }
+          } else if (result.statusCode === 401) {
+            // 401 Unauthorized: SSO 로그인 페이지로 리다이렉트
+            if (typeof window !== 'undefined') {
+              const isRedirecting = sessionStorage.getItem('auth_redirecting');
+
+              // 이미 리다이렉트 중이면 무한 루프 방지
+              if (isRedirecting !== 'true') {
+                sessionStorage.setItem('auth_redirecting', 'true');
+
+                const currentUrl = window.location.href;
+                const ssoUrl = `${AUTH_CONFIG.SSO_LOGIN_URL}?redirect=${encodeURIComponent(currentUrl)}`;
+
+                console.log('[AuthStore] 401 Unauthorized, redirecting to SSO:', ssoUrl);
+                window.location.href = ssoUrl;
+                return; // 리다이렉트 중이므로 상태 업데이트 불필요
+              }
             }
 
             set({
@@ -240,18 +271,22 @@ export const useAuthStore = create<AuthStore>()((set) => ({
               isAuthenticated: false,
               status: 'idle',
             });
+          } else {
+            // 기타 에러
+            set({
+              user: null,
+              isAuthenticated: false,
+              status: 'idle',
+              error: result.error || '사용자 정보 조회에 실패했습니다',
+            });
           }
         } catch (error) {
-          // 에러 발생: 통합인증 로그인페이지로 리다이렉트
-          const integratedAuthUrl = process.env.NEXT_PUBLIC_INTEGRATED_AUTH_URL;
-          if (integratedAuthUrl && typeof window !== 'undefined') {
-            window.location.href = integratedAuthUrl;
-          }
-
+          console.error('[AuthStore] loadUser error:', error);
           set({
             user: null,
             isAuthenticated: false,
             status: 'idle',
+            error: error instanceof Error ? error.message : '사용자 정보 조회에 실패했습니다',
           });
         }
       },

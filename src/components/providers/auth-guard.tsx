@@ -24,20 +24,18 @@ import { useAuthStore } from '@/entities/auth';
 /**
  * 라우트 설정
  *
- * 왜 이렇게 설계했는가?
- * - PUBLIC_ROUTES: 로그인 여부와 관계없이 항상 접근 가능
- * - AUTH_ROUTES: 비로그인 전용 (로그인 시 리다이렉트)
+ * SSO 인증 환경:
+ * - PUBLIC_ROUTES: 인증 체크 없이 접근 가능
+ * - AUTH_ROUTES: 제거 (SSO가 로그인 처리)
  * - ADMIN_ROUTES: admin 역할만 접근 가능 (RBAC)
- * - PRIVATE_ROUTES: 명시 불필요 (public/auth/admin 아니면 자동으로 private)
+ * - PRIVATE_ROUTES: 명시 불필요 (public/admin 아니면 자동으로 private)
  *
- * 장점:
- * - 새로운 페이지 추가 시 auth-guard 수정 불필요
- * - 기본이 private이므로 보안성 향상
- * - 실수로 보호되지 않는 페이지 발생 방지
- * - 역할 기반 접근 제어 (RBAC) 지원
+ * 왜 /login이 없는가?
+ * - SSO 서버가 로그인 처리
+ * - 401 발생 시 자동으로 SSO로 리다이렉트
+ * - 프론트엔드에 별도 로그인 페이지 불필요
  */
-const PUBLIC_ROUTES = ['/login', '/404', '/403', '/logout']; // 비로그인 접근 가능
-const AUTH_ROUTES = ['/login']; // 로그인 시 접근 불가 (대시보드로 리다이렉트)
+const PUBLIC_ROUTES = ['/404', '/403']; // 에러 페이지만 public
 const ADMIN_ROUTES = ['/admin']; // admin 역할만 접근 가능
 
 /**
@@ -90,24 +88,28 @@ export const AuthGuard = ({ children }: AuthGuardProps) => {
    */
   const routeType = useMemo(() => {
     const isPublic = PUBLIC_ROUTES.some((route) => pathname === route);
-    const isAuth = AUTH_ROUTES.some((route) => pathname.startsWith(route));
     const isAdmin = ADMIN_ROUTES.some((route) => pathname.startsWith(route));
 
-    return { isPublic, isAuth, isAdmin };
+    return { isPublic, isAdmin };
   }, [pathname]);
 
   /**
    * 라우트 변경 시 인증 체크
    *
-   * 체크 순서 (중요!):
-   * 1. Auth 라우트 체크: 로그인 상태면 대시보드로 (로그인 페이지 중복 접근 방지)
-   * 2. Public 라우트 체크: 항상 접근 허용
-   * 3. Admin 라우트 체크: admin 역할이 아니면 403 또는 대시보드로 (RBAC)
-   * 4. Private 라우트 체크: 비로그인이면 로그인 페이지로 (나머지 모든 페이지)
+   * SSO 인증 체크 순서:
+   * 1. Public 라우트 체크: 항상 접근 허용 (/404, /403)
+   * 2. Admin 라우트 체크: admin 역할만 접근 가능 (RBAC)
+   *    - 비로그인 → loadUser()가 SSO 리다이렉트 처리
+   *    - user 역할 → /403 페이지로
+   * 3. Private 라우트 체크: 로그인 필요 (나머지 모든 페이지)
+   *    - 비로그인 → loadUser()가 SSO 리다이렉트 처리
+   *
+   * 왜 로그인 페이지가 없는가?
+   * - SSO가 로그인 처리
+   * - loadUser()의 401 응답 시 SSO로 자동 리다이렉트
    *
    * 최적화:
    * - useMemo로 라우트 타입 체크 캐싱
-   * - useCallback으로 함수 메모이제이션
    * - 필요한 의존성만 포함하여 불필요한 리렌더링 방지
    */
   useEffect(() => {
@@ -116,40 +118,30 @@ export const AuthGuard = ({ children }: AuthGuardProps) => {
       return;
     }
 
-    const { isPublic, isAuth, isAdmin } = routeType;
+    const { isPublic, isAdmin } = routeType;
 
     console.log('[AuthGuard]', {
       pathname,
       isAuthenticated,
       userRole: user?.role,
       isPublic,
-      isAuth,
       isAdmin,
     });
 
-    // 1. Auth 라우트 (/login) - 로그인 시 대시보드로 리다이렉트
-    if (isAuth && isAuthenticated) {
-      console.log('[AuthGuard] Authenticated user on auth route, redirecting to dashboard');
-      router.replace('/dashboard');
-      return;
-    }
-
-    // 2. Public 라우트 (/login, /404, /403, /logout) - 항상 접근 가능
+    // 1. Public 라우트 (/404, /403) - 항상 접근 가능
     if (isPublic) {
       return;
     }
 
-    // 3. Admin 라우트 (/admin/*) - admin 역할만 접근 가능 (RBAC)
+    // 2. Admin 라우트 (/admin/*) - admin 역할만 접근 가능 (RBAC)
     if (isAdmin) {
-      // 3-1. 비로그인 - 로그인 페이지로
+      // 2-1. 비로그인 - loadUser()가 SSO 리다이렉트 처리 (여기서는 대기)
       if (!isAuthenticated) {
-        console.log('[AuthGuard] Unauthenticated user on admin route, redirecting to login');
-        const callbackUrl = pathname;
-        router.replace(`/login?callbackUrl=${encodeURIComponent(callbackUrl)}`);
+        console.log('[AuthGuard] Unauthenticated user on admin route, waiting for SSO redirect');
         return;
       }
 
-      // 3-2. 로그인되어 있지만 admin이 아님 - 403 페이지로
+      // 2-2. 로그인되어 있지만 admin이 아님 - 403 페이지로
       if (user?.role !== 'admin') {
         console.log('[AuthGuard] Non-admin user trying to access admin route, redirecting to 403');
         router.replace('/403');
@@ -157,11 +149,9 @@ export const AuthGuard = ({ children }: AuthGuardProps) => {
       }
     }
 
-    // 4. Private 라우트 (나머지 모든 페이지) - 비로그인 시 로그인으로
+    // 3. Private 라우트 (나머지 모든 페이지) - 비로그인 시 loadUser()가 SSO 리다이렉트 처리
     if (!isAuthenticated) {
-      console.log('[AuthGuard] Unauthenticated user on private route, redirecting to login');
-      const callbackUrl = pathname;
-      router.replace(`/login?callbackUrl=${encodeURIComponent(callbackUrl)}`);
+      console.log('[AuthGuard] Unauthenticated user on private route, waiting for SSO redirect');
       return;
     }
   }, [routeType, isAuthenticated, user?.role, status, router, pathname]);

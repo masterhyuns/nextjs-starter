@@ -15,6 +15,7 @@ import type { ApiResponse } from '@/lib/types';
 import type { LoginParams, LoginResponse, RefreshTokenResponse } from './types';
 import type { User, CreateUserParams } from './types';
 import { apiClient } from '@/lib/api-client';
+import { AUTH_CONFIG } from '@/lib/constants';
 
 /**
  * 로그인

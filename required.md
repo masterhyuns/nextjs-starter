@@ -13,9 +13,55 @@
 
 
 
-## 인증프로세스, auth-guard
-[x] 로그인 , 404, 로그아웃 을 제외한 모든 페이지이는 인증이 필요한 (Private페이지)
-[x] localStorage 는 사용하지 않는다.
-[x] /admin으로 시작하는 패스는 사용자 role 이 ADMIN만 접속 가능하다.
-[x] 로그인 여부는 사용자 정보 조회를 했을때 200 이면 정상 로그인 401이면 통합 로그인  페이지로 리다이렉트 한후 통합 로그인 페이지에서 어플리케이션 / 로  리다이렉트 해준다 (이때 쿠키를 생성해준다.)
-[x] AuthGuard 에 대한 최적화를 생각해야한다. 불필요한 리랜더링은 호출 되면 안됀다.
+## 인증프로세스, auth-guar 요구사항
+### 1. 인증 방식
+- **HttpOnly 쿠키 기반 인증** (`mes-ticket`)
+- 쿠키는 SSO 서버가 설정 (JavaScript로 읽을 수 없음)
+- 인증 상태는 API 응답으로만 판단
+
+### 2. 인증 플로우
+1. `/api/user/me` API 호출
+2. **200 OK** → 인증됨, 사용자 정보 사용
+3. **401 Unauthorized** → SSO 로그인 페이지로 리다이렉트
+4. SSO 로그인 완료 → 원래 페이지로 자동 복귀
+
+### 3. 기술 제약사항
+- **정적 배포 (Static Deployment)** - SSR 불가
+- React Router v7 사용
+- 쿠키는 `httpOnly: true`, `SameSite: None`
+- 프론트엔드에서 쿠키 직접 읽기 불가능
+#### Auth Guard 기능
+- 보호된 페이지 접근 시 자동으로 인증 체크
+- 로딩 상태 표시 (스피너)
+- 인증 실패 시 SSO로 리다이렉트
+- 인증 성공 시 하위 컴포넌트 렌더링
+- 사용자 정보 Context로 제공
+
+#### 필요한 구성요소
+1. **AuthProvider**: 전역 인증 상태 관리
+2. **useAuth Hook**: 인증 상태 및 사용자 정보 접근
+3. **ProtectedRoute**: 인증이 필요한 라우트 래퍼
+4. **API Client**: `/api/user/me` 호출 함수
+
+### 5. API 정보
+- **사용자 정보 조회**: `GET /api/user/me`
+    - 성공: `200 OK` + 사용자 정보
+    - 실패: `401 Unauthorized`
+- **SSO 로그인**: `https://sso.cowexa.com/login?redirect={현재URL}`
+
+7. 주의사항
+
+- 무한 리다이렉트 방지 (SSO → 앱 → SSO 루프)
+- 로그인 페이지는 auth-guard 제외
+- API 호출 실패 시 에러 처리
+- 토큰 만료 시 자동 재로그인
+
+8. 구현 우선순위
+
+1. /api/user/me API 호출 로직
+2. 401 응답 시 SSO 리다이렉트
+3. 로딩 상태 UI
+4. 전역 상태 관리 (Context)
+5. useAuth 훅 제공
+
+

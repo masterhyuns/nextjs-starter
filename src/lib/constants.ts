@@ -13,13 +13,30 @@
  */
 export const API_CONFIG = {
   /** API 기본 URL */
-  BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000/api',
+  BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || '/api',
   /** API 요청 타임아웃 (밀리초) */
   TIMEOUT: 30000,
   /** 재시도 횟수 */
   RETRY_COUNT: 3,
   /** 재시도 딜레이 (밀리초) */
   RETRY_DELAY: 1000,
+} as const;
+
+/**
+ * 인증 관련 상수
+ *
+ * 왜 환경변수를 사용하지 않는가?
+ * - 정적 배포 환경에서는 빌드 시점에 환경변수가 고정됨
+ * - 런타임에 변경 불가능하므로 설정 파일로 관리
+ * - 타입 안전성 확보 및 중앙 집중식 관리
+ */
+export const AUTH_CONFIG = {
+  /** SSO 로그인 URL */
+  SSO_LOGIN_URL: 'https://sso.cowexa.com/login',
+  /** 사용자 정보 조회 API */
+  API_USER_ME: '/api/user/me',
+  /** SSO 쿠키 이름 (httpOnly, SameSite: None) */
+  COOKIE_NAME: 'mes-ticket',
 } as const;
 
 /**
