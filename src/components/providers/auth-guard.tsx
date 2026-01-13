@@ -157,13 +157,58 @@ export const AuthGuard = ({ children }: AuthGuardProps) => {
   }, [routeType, isAuthenticated, user?.role, status, router, pathname]);
 
   /**
-   * 로딩 중일 때 화면
+   * 렌더링 조건 체크
+   *
+   * 왜 필요한가?
+   * - 권한 없는 페이지가 잠깐 보이는 "번쩍거림" 방지
+   * - 로딩 중이거나 권한 체크 중일 때는 children 렌더링 차단
+   *
+   * 렌더링 차단 조건:
+   * 1. 로딩 중 (status === 'loading')
+   * 2. Admin 페이지인데 권한 없음 (isAdmin && isAuthenticated && role !== 'admin')
+   * 3. Private 페이지인데 비로그인 (!isPublic && !isAuthenticated)
+   */
+  const shouldBlockRender = useMemo(() => {
+    const { isPublic, isAdmin } = routeType;
+
+    // 1. 로딩 중이면 차단
+    if (status === 'loading') {
+      return true;
+    }
+
+    // 2. Public 페이지는 항상 허용
+    if (isPublic) {
+      return false;
+    }
+
+    // 3. Admin 페이지인데 로그인은 되어있지만 admin이 아닌 경우 차단
+    if (isAdmin && isAuthenticated && user?.role !== 'admin') {
+      return true;
+    }
+
+    // 4. Admin 페이지인데 비로그인 상태면 차단 (SSO 리다이렉트 대기)
+    if (isAdmin && !isAuthenticated) {
+      return true;
+    }
+
+    // 5. Private 페이지인데 비로그인 상태면 차단 (SSO 리다이렉트 대기)
+    if (!isPublic && !isAuthenticated) {
+      return true;
+    }
+
+    // 그 외에는 허용
+    return false;
+  }, [status, routeType, isAuthenticated, user?.role]);
+
+  /**
+   * 로딩 또는 권한 체크 중일 때 화면
    *
    * 왜 필요한가?
    * - 인증 상태 확인 중 깜빡임 방지
+   * - 권한 없는 페이지 렌더링 방지
    * - 사용자 경험 개선
    */
-  if (status === 'loading') {
+  if (shouldBlockRender) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
