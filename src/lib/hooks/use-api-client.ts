@@ -42,18 +42,8 @@ interface ApiState<T> {
  * useApiClient 반환 타입
  */
 interface UseApiClientReturn<T> extends ApiState<T> {
-  /** API 명세 객체를 받아서 실행 (권장) */
+  /** API 명세 객체를 받아서 실행 */
   fetch: (apiSpec: ApiSpec) => Promise<ApiResponse<T>>;
-  /** GET 요청 */
-  get: (url: string, data?: unknown, options?: RequestOptions) => Promise<ApiResponse<T>>;
-  /** POST 요청 */
-  post: (url: string, data?: unknown, options?: RequestOptions) => Promise<ApiResponse<T>>;
-  /** PUT 요청 */
-  put: (url: string, data?: unknown, options?: RequestOptions) => Promise<ApiResponse<T>>;
-  /** DELETE 요청 */
-  del: (url: string, data?: unknown, options?: RequestOptions) => Promise<ApiResponse<T>>;
-  /** PATCH 요청 */
-  patch: (url: string, data?: unknown, options?: RequestOptions) => Promise<ApiResponse<T>>;
   /** 상태 초기화 */
   reset: () => void;
   /** 데이터 수동 설정 */
@@ -63,34 +53,39 @@ interface UseApiClientReturn<T> extends ApiState<T> {
 /**
  * useApiClient 훅
  *
+ * 왜 이렇게 단순화했는가?
+ * - fetch() 메서드만 제공하여 API 호출 방식 통일
+ * - entities 폴더의 api.ts에서 정의한 명세 객체 사용
+ * - get/post/put/del 등 불필요한 메서드 제거
+ * - apiClient.fetch()를 호출하여 상태 관리만 추가
+ *
  * @example
  * // 기본 사용
- * const { data, loading, error, get } = useApiClient<User[]>();
+ * import { useApiClient } from '@/lib/hooks/use-api-client';
+ * import { authApi } from '@/entities/auth/api';
+ *
+ * const { data, loading, error, fetch } = useApiClient<LoginResponse>();
+ *
+ * const handleLogin = async () => {
+ *   const response = await fetch(authApi.login({ email, password }));
+ *   if (response.success) {
+ *     console.log('로그인 성공');
+ *   }
+ * };
+ *
+ * @example
+ * // 목록 조회
+ * const { data, loading, error, fetch } = useApiClient<User[]>();
  *
  * useEffect(() => {
- *   get('/users', { page: 1, limit: 10 });
- * }, [get]);
+ *   fetch(userApi.getList({ page: 1, limit: 10 }));
+ * }, [fetch]);
  *
  * if (loading) return <div>로딩 중...</div>;
  * if (error) return <div>에러: {error}</div>;
  * if (!data) return null;
  *
  * return <UserList users={data} />;
- *
- * @example
- * // POST 요청 (회원가입)
- * const { loading, error, post } = useApiClient();
- *
- * const handleSignup = async () => {
- *   const response = await post('/auth/signup', {
- *     email: 'test@example.com',
- *     password: 'password123'
- *   });
- *
- *   if (response.success) {
- *     console.log('회원가입 성공');
- *   }
- * };
  */
 export function useApiClient<T = unknown>(): UseApiClientReturn<T> {
   const [state, setState] = useState<ApiState<T>>({
@@ -99,111 +94,6 @@ export function useApiClient<T = unknown>(): UseApiClientReturn<T> {
     error: null,
     statusCode: null,
   });
-
-  /**
-   * API 요청 래퍼
-   *
-   * 왜 이렇게 구현했는가?
-   * - apiClient의 메서드를 그대로 호출
-   * - 상태 관리(loading, data, error)만 추가
-   * - 중복 구현 없이 깔끔하게 래핑
-   */
-  const request = useCallback(
-    async (
-      apiMethod: typeof apiClient.get | typeof apiClient.post | typeof apiClient.put | typeof apiClient.delete | typeof apiClient.patch,
-      url: string,
-      data?: unknown,
-      options?: RequestOptions
-    ): Promise<ApiResponse<T>> => {
-      // 1. 로딩 시작
-      setState((prev) => ({
-        ...prev,
-        loading: true,
-        error: null,
-      }));
-
-      // 2. apiClient 메서드 호출 (기존 로직 그대로 활용)
-      const response = await apiMethod<T>(url, data, options);
-
-      // 3. 응답에 따라 상태 업데이트
-      if (response.success) {
-        setState({
-          data: response.data ?? null,
-          loading: false,
-          error: null,
-          statusCode: response.statusCode,
-        });
-      } else {
-        setState({
-          data: null,
-          loading: false,
-          error: response.error || '알 수 없는 오류',
-          statusCode: response.statusCode,
-        });
-      }
-
-      return response;
-    },
-    []
-  );
-
-  /**
-   * GET 요청 - apiClient.get을 래핑
-   *
-   * 왜 bind가 필요 없는가?
-   * - apiClient의 메서드들은 화살표 함수로 정의됨
-   * - 화살표 함수는 렉시컬 스코프를 사용하여 this가 자동 바인딩됨
-   */
-  const get = useCallback(
-    (url: string, data?: unknown, options?: RequestOptions) => {
-      return request(apiClient.get, url, data, options);
-    },
-    [request]
-  );
-
-  /**
-   * POST 요청 - apiClient.post를 래핑
-   */
-  const post = useCallback(
-    (url: string, data?: unknown, options?: RequestOptions) => {
-      return request(apiClient.post, url, data, options);
-    },
-    [request]
-  );
-
-  /**
-   * PUT 요청 - apiClient.put을 래핑
-   */
-  const put = useCallback(
-    (url: string, data?: unknown, options?: RequestOptions) => {
-      return request(apiClient.put, url, data, options);
-    },
-    [request]
-  );
-
-  /**
-   * DELETE 요청 - apiClient.delete를 래핑
-   *
-   * 왜 'del'인가?
-   * - 'delete'는 JavaScript 예약어
-   * - TypeScript에서는 사용 가능하지만 혼란 방지를 위해 'del' 사용
-   */
-  const del = useCallback(
-    (url: string, data?: unknown, options?: RequestOptions) => {
-      return request(apiClient.delete, url, data, options);
-    },
-    [request]
-  );
-
-  /**
-   * PATCH 요청 - apiClient.patch를 래핑
-   */
-  const patch = useCallback(
-    (url: string, data?: unknown, options?: RequestOptions) => {
-      return request(apiClient.patch, url, data, options);
-    },
-    [request]
-  );
 
   /**
    * 상태 초기화
@@ -238,13 +128,12 @@ export function useApiClient<T = unknown>(): UseApiClientReturn<T> {
   }, []);
 
   /**
-   * API 명세 객체를 받아서 실행 (권장 방식)
+   * API 명세 객체를 받아서 실행
    *
-   * 왜 이 방식을 권장하는가?
-   * - entities 폴더의 api.ts에서 API 명세를 순수 객체로 정의
-   * - URL, 메서드, 데이터를 한 곳에서 관리
-   * - 타입 안전성 확보
-   * - apiClient는 EnvProvider에서 이미 baseURL이 설정됨
+   * 왜 이렇게 구현했는가?
+   * - apiClient.fetch()를 호출하여 실제 API 요청 수행
+   * - 상태 관리(loading, data, error)만 추가
+   * - 중복 로직 제거 및 코드 간결화
    *
    * @example
    * // entities/auth/api.ts
@@ -270,35 +159,10 @@ export function useApiClient<T = unknown>(): UseApiClientReturn<T> {
       }));
 
       try {
-        // 2. apiClient 사용 (EnvProvider에서 이미 baseURL 설정됨)
-        let response: ApiResponse<T>;
+        // 2. apiClient.fetch() 호출 (EnvProvider에서 이미 baseURL 설정됨)
+        const response = await apiClient.fetch<T>(apiSpec);
 
-        switch (apiSpec.method) {
-          case 'GET':
-            response = await apiClient.get<T>(apiSpec.url, apiSpec.data);
-            break;
-          case 'POST':
-            response = await apiClient.post<T>(apiSpec.url, apiSpec.data);
-            break;
-          case 'PUT':
-            response = await apiClient.put<T>(apiSpec.url, apiSpec.data);
-            break;
-          case 'DELETE':
-            response = await apiClient.delete<T>(apiSpec.url, apiSpec.data);
-            break;
-          case 'PATCH':
-            response = await apiClient.patch<T>(apiSpec.url, apiSpec.data);
-            break;
-          default:
-            throw new Error(`Unsupported HTTP method: ${apiSpec.method}`);
-        }
-
-        // 3. transform 함수가 있으면 적용
-        if (apiSpec.transform && response.data) {
-          response.data = apiSpec.transform(response.data);
-        }
-
-        // 4. 성공 상태 업데이트
+        // 3. 성공 상태 업데이트
         if (response.success) {
           setState({
             data: response.data || null,
@@ -307,7 +171,7 @@ export function useApiClient<T = unknown>(): UseApiClientReturn<T> {
             statusCode: response.statusCode,
           });
         } else {
-          // 5. 실패 상태 업데이트
+          // 4. 실패 상태 업데이트
           setState({
             data: null,
             loading: false,
@@ -318,7 +182,7 @@ export function useApiClient<T = unknown>(): UseApiClientReturn<T> {
 
         return response;
       } catch (error) {
-        // 6. 예외 처리
+        // 5. 예외 처리
         const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
         setState({
           data: null,
@@ -342,11 +206,6 @@ export function useApiClient<T = unknown>(): UseApiClientReturn<T> {
   return {
     ...state,
     fetch,
-    get,
-    post,
-    put,
-    del,
-    patch,
     reset,
     setData,
   };
