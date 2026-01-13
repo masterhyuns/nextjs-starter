@@ -164,13 +164,52 @@ $shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
   :root {
     --background: #ffffff;
     --foreground: #171717;
+
+    /* FullScreenLoading에서 사용하는 CSS 변수 */
+    --color-background: #ffffff;
+    --color-text-secondary: #{$color-gray-600};
+    --color-gray-200: #{$color-gray-200};
+    --color-primary: #{$color-primary};
+
+    /* 간격 변수 */
+    --spacing-1: 0.25rem;
+    --spacing-2: 0.5rem;
+    --spacing-3: 0.75rem;
+    --spacing-4: 1rem;
+    --spacing-5: 1.25rem;
+    --spacing-6: 1.5rem;
+    --spacing-8: 2rem;
+
+    /* 폰트 크기 */
+    --font-size-sm: 0.875rem;
+    --font-size-base: 1rem;
+    --font-size-lg: 1.125rem;
   }
 
   @media (prefers-color-scheme: dark) {
     :root {
       --background: #0a0a0a;
       --foreground: #ededed;
+
+      /* 다크모드 색상 */
+      --color-background-dark: #1a1a1a;
+      --color-text-secondary-dark: #{$color-gray-400};
+      --color-gray-700: #{$color-gray-700};
+      --color-primary-dark: #{$color-primary-light};
     }
+  }
+
+  /* 접근성: 스크린 리더 전용 텍스트 */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
   }
 
   html,

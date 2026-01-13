@@ -20,6 +20,7 @@
 import { useEffect, useMemo, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuthStore } from '@/entities/auth';
+import { FullScreenLoading } from '@/components/ui/full-screen-loading';
 
 /**
  * 라우트 설정
@@ -207,16 +208,14 @@ export const AuthGuard = ({ children }: AuthGuardProps) => {
    * - 인증 상태 확인 중 깜빡임 방지
    * - 권한 없는 페이지 렌더링 방지
    * - 사용자 경험 개선
+   *
+   * FullScreenLoading 사용:
+   * - SCSS Module로 스타일 격리
+   * - 다크모드 자동 지원
+   * - 접근성(a11y) 준수
    */
   if (shouldBlockRender) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-center">
-          <div className="mb-4 h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600"></div>
-          <p className="text-gray-600">로딩 중...</p>
-        </div>
-      </div>
-    );
+    return <FullScreenLoading text="로딩 중..." />;
   }
 
   return <>{children}</>;
