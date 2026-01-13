@@ -101,7 +101,7 @@ export const authApi = {
  *
  * 왜 필요한가?
  * - Store (Zustand)에서는 훅(useApiClient)을 사용할 수 없음
- * - apiClient를 직접 사용 (EnvProvider에서 이미 baseURL 설정됨)
+ * - apiClient.fetch()를 직접 사용 (EnvProvider에서 이미 baseURL 설정됨)
  *
  * 사용 예시:
  * ```ts
@@ -117,7 +117,7 @@ export const authApi = {
 export const getCurrentUser = async (): Promise<ApiResponse<User>> => {
   try {
     // TODO: 실제 배포 시에는 Mock 제거하고 실제 API 호출
-    // return await apiClient.get<User>(AUTH_CONFIG.API_USER_ME);
+    // return await apiClient.fetch<User>(authApi.getCurrentUser);
 
     // Mock 응답 (개발용)
     const mockUser: User = {
@@ -149,12 +149,19 @@ export const getCurrentUser = async (): Promise<ApiResponse<User>> => {
 
 /**
  * 로그인 (Store용)
+ *
+ * 왜 필요한가?
+ * - Store에서 authApi.login()을 직접 실행
+ * - apiClient.fetch()로 API 명세를 실행
+ *
+ * @example
+ * // Store에서 사용
+ * const result = await login({ email, password });
  */
 export const login = async (params: LoginParams): Promise<ApiResponse<LoginResponse>> => {
   try {
     // TODO: 실제 API 호출
-    // const client = createApiClient(baseURL);
-    // return await client.post<LoginResponse>('/auth/login', params);
+    // return await apiClient.fetch<LoginResponse>(authApi.login(params));
 
     // Mock 응답
     return mockLogin(params);
@@ -170,12 +177,15 @@ export const login = async (params: LoginParams): Promise<ApiResponse<LoginRespo
 
 /**
  * 회원가입 (Store용)
+ *
+ * @example
+ * // Store에서 사용
+ * const result = await signup({ email, password, name });
  */
 export const signup = async (params: CreateUserParams): Promise<ApiResponse<User>> => {
   try {
     // TODO: 실제 API 호출
-    // const client = createApiClient(baseURL);
-    // return await client.post<User>('/auth/signup', params);
+    // return await apiClient.fetch<User>(authApi.signup(params));
 
     // Mock 응답
     return mockSignup(params);
@@ -191,12 +201,15 @@ export const signup = async (params: CreateUserParams): Promise<ApiResponse<User
 
 /**
  * 로그아웃 (Store용)
+ *
+ * @example
+ * // Store에서 사용
+ * const result = await logout();
  */
 export const logout = async (): Promise<ApiResponse<void>> => {
   try {
     // TODO: 실제 API 호출
-    // const client = createApiClient(baseURL);
-    // return await client.post<void>('/auth/logout');
+    // return await apiClient.fetch<void>(authApi.logout);
 
     return {
       success: true,

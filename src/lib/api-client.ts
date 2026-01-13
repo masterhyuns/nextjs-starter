@@ -12,7 +12,7 @@
  * - 필요한 기능만 구현하여 경량화
  */
 
-import type { ApiResponse } from './types';
+import type { ApiResponse, ApiSpec } from './types';
 import { API_CONFIG } from './constants';
 
 /**
@@ -144,6 +144,56 @@ export class ApiClient {
    */
   patch = async <T>(url: string, data?: unknown, options?: RequestOptions): Promise<ApiResponse<T>> => {
     return this.request<T>(url, 'PATCH', data, options);
+  };
+
+  /**
+   * API 명세 객체를 받아서 실행
+   *
+   * 왜 필요한가?
+   * - entities 폴더의 api.ts에서 정의한 API 명세를 실행
+   * - 컴포넌트뿐만 아니라 Store에서도 사용 가능
+   * - URL, 메서드, 데이터를 한 곳에서 관리
+   *
+   * @param apiSpec - API 명세 객체 (method, url, data)
+   * @param options - 추가 옵션
+   * @returns API 응답
+   *
+   * @example
+   * // Store에서 사용
+   * import { apiClient } from '@/lib/api-client';
+   * import { authApi } from '@/entities/auth/api';
+   *
+   * const result = await apiClient.fetch(authApi.login({ email, password }));
+   */
+  fetch = async <T>(apiSpec: ApiSpec, options?: RequestOptions): Promise<ApiResponse<T>> => {
+    let response: ApiResponse<T>;
+
+    switch (apiSpec.method) {
+      case 'GET':
+        response = await this.get<T>(apiSpec.url, apiSpec.data, options);
+        break;
+      case 'POST':
+        response = await this.post<T>(apiSpec.url, apiSpec.data, options);
+        break;
+      case 'PUT':
+        response = await this.put<T>(apiSpec.url, apiSpec.data, options);
+        break;
+      case 'DELETE':
+        response = await this.delete<T>(apiSpec.url, apiSpec.data, options);
+        break;
+      case 'PATCH':
+        response = await this.patch<T>(apiSpec.url, apiSpec.data, options);
+        break;
+      default:
+        throw new Error(`Unsupported HTTP method: ${apiSpec.method}`);
+    }
+
+    // transform 함수가 있으면 적용
+    if (apiSpec.transform && response.data) {
+      response.data = apiSpec.transform(response.data);
+    }
+
+    return response;
   };
 
   /**
