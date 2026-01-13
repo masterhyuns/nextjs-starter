@@ -20,7 +20,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { apiClient, createApiClient } from '../api-client';
+import { apiClient } from '../api-client';
 import type { ApiResponse, ApiSpec } from '../types';
 import type { RequestOptions } from '../api-client';
 
@@ -43,7 +43,7 @@ interface ApiState<T> {
  */
 interface UseApiClientReturn<T> extends ApiState<T> {
   /** API 명세 객체를 받아서 실행 (권장) */
-  fetch: (apiSpec: ApiSpec, baseURL?: string) => Promise<ApiResponse<T>>;
+  fetch: (apiSpec: ApiSpec) => Promise<ApiResponse<T>>;
   /** GET 요청 */
   get: (url: string, data?: unknown, options?: RequestOptions) => Promise<ApiResponse<T>>;
   /** POST 요청 */
@@ -244,7 +244,7 @@ export function useApiClient<T = unknown>(): UseApiClientReturn<T> {
    * - entities 폴더의 api.ts에서 API 명세를 순수 객체로 정의
    * - URL, 메서드, 데이터를 한 곳에서 관리
    * - 타입 안전성 확보
-   * - baseURL을 선택적으로 전달 가능 (EnvContext 사용)
+   * - apiClient는 EnvProvider에서 이미 baseURL이 설정됨
    *
    * @example
    * // entities/auth/api.ts
@@ -261,7 +261,7 @@ export function useApiClient<T = unknown>(): UseApiClientReturn<T> {
    * const result = await fetch(authApi.login({ email, password }));
    */
   const fetch = useCallback(
-    async (apiSpec: ApiSpec, baseURL?: string): Promise<ApiResponse<T>> => {
+    async (apiSpec: ApiSpec): Promise<ApiResponse<T>> => {
       // 1. 로딩 시작
       setState((prev) => ({
         ...prev,
@@ -270,38 +270,35 @@ export function useApiClient<T = unknown>(): UseApiClientReturn<T> {
       }));
 
       try {
-        // 2. baseURL이 있으면 새로운 client 생성, 없으면 기본 apiClient 사용
-        const client = baseURL ? createApiClient(baseURL) : apiClient;
-
-        // 3. 메서드별 분기 처리
+        // 2. apiClient 사용 (EnvProvider에서 이미 baseURL 설정됨)
         let response: ApiResponse<T>;
 
         switch (apiSpec.method) {
           case 'GET':
-            response = await client.get<T>(apiSpec.url, apiSpec.data);
+            response = await apiClient.get<T>(apiSpec.url, apiSpec.data);
             break;
           case 'POST':
-            response = await client.post<T>(apiSpec.url, apiSpec.data);
+            response = await apiClient.post<T>(apiSpec.url, apiSpec.data);
             break;
           case 'PUT':
-            response = await client.put<T>(apiSpec.url, apiSpec.data);
+            response = await apiClient.put<T>(apiSpec.url, apiSpec.data);
             break;
           case 'DELETE':
-            response = await client.delete<T>(apiSpec.url, apiSpec.data);
+            response = await apiClient.delete<T>(apiSpec.url, apiSpec.data);
             break;
           case 'PATCH':
-            response = await client.patch<T>(apiSpec.url, apiSpec.data);
+            response = await apiClient.patch<T>(apiSpec.url, apiSpec.data);
             break;
           default:
             throw new Error(`Unsupported HTTP method: ${apiSpec.method}`);
         }
 
-        // 4. transform 함수가 있으면 적용
+        // 3. transform 함수가 있으면 적용
         if (apiSpec.transform && response.data) {
           response.data = apiSpec.transform(response.data);
         }
 
-        // 5. 성공 상태 업데이트
+        // 4. 성공 상태 업데이트
         if (response.success) {
           setState({
             data: response.data || null,
@@ -310,7 +307,7 @@ export function useApiClient<T = unknown>(): UseApiClientReturn<T> {
             statusCode: response.statusCode,
           });
         } else {
-          // 6. 실패 상태 업데이트
+          // 5. 실패 상태 업데이트
           setState({
             data: null,
             loading: false,
@@ -321,7 +318,7 @@ export function useApiClient<T = unknown>(): UseApiClientReturn<T> {
 
         return response;
       } catch (error) {
-        // 7. 예외 처리
+        // 6. 예외 처리
         const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
         setState({
           data: null,

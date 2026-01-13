@@ -15,7 +15,7 @@
 import type { ApiResponse, ApiSpec } from '@/lib/types';
 import type { LoginParams, LoginResponse, RefreshTokenResponse } from './types';
 import type { User, CreateUserParams } from './types';
-import { createApiClient } from '@/lib/api-client';
+import { apiClient } from '@/lib/api-client';
 import { AUTH_CONFIG } from '@/lib/constants';
 
 /**
@@ -101,25 +101,23 @@ export const authApi = {
  *
  * 왜 필요한가?
  * - Store (Zustand)에서는 훅(useApiClient)을 사용할 수 없음
- * - baseURL을 파라미터로 받아서 직접 호출
+ * - apiClient를 직접 사용 (EnvProvider에서 이미 baseURL 설정됨)
  *
  * 사용 예시:
  * ```ts
  * // entities/auth/store.ts
- * loadUser: async (baseURL: string) => {
- *   const result = await getCurrentUser(baseURL);
+ * loadUser: async () => {
+ *   const result = await getCurrentUser();
  *   if (result.success) {
  *     set({ user: result.data });
  *   }
  * }
  * ```
  */
-export const getCurrentUser = async (baseURL?: string): Promise<ApiResponse<User>> => {
+export const getCurrentUser = async (): Promise<ApiResponse<User>> => {
   try {
-    const client = baseURL ? createApiClient(baseURL) : createApiClient(AUTH_CONFIG.SSO_LOGIN_URL);
-
     // TODO: 실제 배포 시에는 Mock 제거하고 실제 API 호출
-    // return await client.get<User>(AUTH_CONFIG.API_USER_ME);
+    // return await apiClient.get<User>(AUTH_CONFIG.API_USER_ME);
 
     // Mock 응답 (개발용)
     const mockUser: User = {

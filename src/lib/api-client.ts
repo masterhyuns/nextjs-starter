@@ -64,6 +64,34 @@ export class ApiClient {
   };
 
   /**
+   * baseURL 설정
+   *
+   * 왜 필요한가?
+   * - EnvProvider에서 런타임에 baseURL을 주입하기 위함
+   * - 정적 배포 환경에서 빌드 후 baseURL 변경 가능
+   * - 싱글톤 인스턴스의 baseURL을 동적으로 설정
+   *
+   * @param url - 새로운 baseURL
+   *
+   * @example
+   * // EnvProvider에서 사용
+   * apiClient.setBaseURL('https://api.production.com');
+   */
+  setBaseURL = (url: string): void => {
+    this.baseURL = url;
+    console.log('[ApiClient] baseURL set to:', url);
+  };
+
+  /**
+   * 현재 baseURL 가져오기
+   *
+   * @returns 현재 설정된 baseURL
+   */
+  getBaseURL = (): string => {
+    return this.baseURL;
+  };
+
+  /**
    * GET 요청
    *
    * @param url - 요청 URL
