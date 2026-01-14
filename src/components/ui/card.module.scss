@@ -13,8 +13,9 @@
  * - className={styles.container}
  */
 
-// globals.scss의 변수와 믹스인 사용 가능
-@import '@/app/globals.scss';
+// SCSS 변수와 믹스인 import
+@use '@/assets/scss/variables' as *;
+@use '@/assets/scss/mixins' as *;
 
 /**
  * 카드 컨테이너
