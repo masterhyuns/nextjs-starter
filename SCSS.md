@@ -1,86 +1,133 @@
 # SCSS 사용 가이드
 
-## 📦 설치 완료
+> Tailwind CSS 제거 후 순수 SCSS 기반 스타일링 시스템
 
-```json
-{
-  "devDependencies": {
-    "sass": "^1.97.2"
-  }
-}
+## 📁 디렉토리 구조
+
+```
+src/assets/scss/
+├── _variables.scss    # SCSS 변수 (색상, 간격, 폰트 등)
+├── _mixins.scss       # SCSS 믹스인 (재사용 가능한 스타일 패턴)
+├── _base.scss         # 전역 기본 스타일 + CSS 변수 정의
+├── _animations.scss   # 키프레임 애니메이션
+└── styles.scss        # 메인 export (모든 것을 통합)
 ```
 
-## 🎨 SCSS + Tailwind CSS 전략
+## 🎯 왜 이렇게 구성했는가?
 
-### 언제 무엇을 사용할까?
+### 1. **전역 스타일 vs 컴포넌트 스타일 분리**
+- **전역 스타일**: `src/assets/scss/styles.scss`에서 통합 관리
+- **컴포넌트 스타일**: SCSS Module (`*.module.scss`)로 스코프 격리
 
-| 상황 | 사용 기술 | 이유 |
-|------|---------|-----|
-| **간단한 유틸리티** | Tailwind | 빠르고 직관적 |
-| **복잡한 애니메이션** | SCSS | 키프레임, 믹스인 활용 |
-| **컴포넌트별 고유 스타일** | SCSS Module | 스코프 격리 |
-| **반복되는 패턴** | SCSS 변수/믹스인 | 재사용성 |
-| **빠른 프로토타이핑** | Tailwind | 클래스만으로 완성 |
+### 2. **SCSS 변수 vs CSS 변수**
+
+| 구분 | SCSS 변수 (`$variable`) | CSS 변수 (`--variable`) |
+|------|------------------------|------------------------|
+| **컴파일** | 컴파일 타임에 고정 | 런타임에 동적 변경 가능 |
+| **사용처** | 믹스인, 함수, 계산에 활용 | JavaScript로 제어 가능 |
+| **용도** | 디자인 토큰, 재사용 패턴 | 다크모드, 테마 전환 |
+| **브라우저** | 컴파일 후 사라짐 | 브라우저에 남아있음 |
 
 ---
 
-## 🗂️ 파일 구조
+## 🚀 사용 방법
 
+### 1. 전역 스타일 적용 (layout.tsx)
+
+```typescript
+// src/app/layout.tsx
+import "@/assets/scss/styles.scss";  // ✅ 한 번만 import
 ```
-src/
-├── app/
-│   └── globals.scss          # 전역 SCSS (변수, 믹스인, Tailwind)
-│
-└── presentation/
-    └── components/
-        └── ui/
-            ├── card.module.scss  # SCSS Module (컴포넌트별)
-            └── card.tsx
-```
+
+**주의**: `globals.scss`는 더 이상 사용하지 않습니다 (Tailwind 제거됨).
 
 ---
 
-## 📝 globals.scss (전역 스타일)
+### 2. SCSS Module에서 변수/믹스인 사용
 
-### 구조
+#### ✅ 올바른 사용법
 
 ```scss
-// 1. Tailwind import (CSS @import로 처리되도록 url() 사용)
-@import url('tailwindcss');
+// component.module.scss
+@use '@/assets/scss/variables' as *;
+@use '@/assets/scss/mixins' as *;
 
-// 2. SCSS 변수 정의
-$color-primary: #3b82f6;
-$spacing-md: 1rem;
+.container {
+  // SCSS 변수 사용
+  color: $color-primary;
+  padding: $spacing-md;
 
-// 3. SCSS 믹스인 정의
-@mixin flex-center {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
+  // SCSS 믹스인 사용
+  @include flex-center;
+  @include shadow('md');
 
-// 4. Tailwind 테마 커스터마이징
-@theme {
-  --color-primary: #{$color-primary};
-}
-
-// 5. 전역 스타일
-@layer base {
-  body {
-    font-family: Arial, sans-serif;
+  // 반응형
+  @include tablet {
+    padding: $spacing-sm;
   }
 }
 ```
 
-### 제공되는 SCSS 변수
+#### ❌ 잘못된 사용법
+
+```scss
+// ❌ styles.scss를 import하면 전역 스타일이 중복됨
+@use '@/assets/scss/styles' as *;  // 절대 금지!
+
+// ❌ 변수만 필요한데 mixins도 함께 import
+@use '@/assets/scss/mixins' as *;  // 필요한 것만 import
+```
+
+---
+
+### 3. CSS 변수 사용 (모든 곳에서)
+
+#### SCSS Module에서
+
+```scss
+// component.module.scss
+.button {
+  // CSS 변수 사용 (runtime)
+  background-color: var(--color-primary);
+  padding: var(--spacing-4);
+  border-radius: var(--radius-md);
+}
+```
+
+#### Tailwind 클래스처럼 사용 (inline style)
+
+```tsx
+// Component.tsx
+<div style={{
+  color: 'var(--color-primary)',
+  padding: 'var(--spacing-4)'
+}}>
+  Content
+</div>
+```
+
+#### JavaScript에서 동적 변경
+
+```typescript
+// 다크모드 전환 예시
+document.documentElement.style.setProperty('--color-background', '#0a0a0a');
+document.documentElement.style.setProperty('--color-text', '#ededed');
+```
+
+---
+
+## 📚 주요 변수 및 믹스인
+
+### SCSS 변수 (`_variables.scss`)
 
 #### 색상
 ```scss
-$color-primary: #3b82f6;      // 파란색
-$color-secondary: #8b5cf6;    // 보라색
-$color-success: #10b981;      // 초록색
-$color-warning: #f59e0b;      // 주황색
-$color-danger: #ef4444;       // 빨간색
+$color-primary: #3b82f6;
+$color-secondary: #8b5cf6;
+$color-success: #10b981;
+$color-danger: #ef4444;
+
+$color-gray-100 ~ $color-gray-900  // 그레이 스케일
 ```
 
 #### 간격
@@ -100,449 +147,324 @@ $breakpoint-lg: 1024px;
 $breakpoint-xl: 1280px;
 ```
 
-#### 전환 효과
-```scss
-$transition-fast: 150ms ease-in-out;
-$transition-base: 300ms ease-in-out;
-$transition-slow: 500ms ease-in-out;
-```
+---
 
-### 제공되는 믹스인
+### SCSS 믹스인 (`_mixins.scss`)
 
-#### 1. 반응형 믹스인
+#### 1. 반응형
+
 ```scss
-@mixin respond-to($breakpoint) {
-  @if $breakpoint == 'sm' {
-    @media (min-width: $breakpoint-sm) {
-      @content;
-    }
-  }
-  // md, lg, xl...
+// Desktop First (min-width)
+@include respond-to('md') {
+  font-size: 18px;
+}
+
+// Mobile First (max-width)
+@include mobile {
+  display: block;
+}
+
+@include tablet {
+  padding: 16px;
+}
+
+@include desktop {
+  max-width: 1280px;
 }
 ```
 
-**사용 예시:**
+#### 2. Flexbox
+
 ```scss
-.container {
-  padding: 1rem;
+.centered {
+  @include flex-center;  // 가로+세로 중앙
+}
 
-  @include respond-to('md') {
-    padding: 2rem;
-  }
-
-  @include respond-to('lg') {
-    padding: 3rem;
-  }
+.header {
+  @include flex-between;  // space-between + align-items: center
 }
 ```
 
-#### 2. Flexbox 센터 정렬
-```scss
-@mixin flex-center {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-```
+#### 3. 텍스트
 
-**사용 예시:**
 ```scss
-.modal {
-  @include flex-center;
-  min-height: 100vh;
-}
-```
-
-#### 3. 말줄임 (Ellipsis)
-```scss
-@mixin text-ellipsis($lines: 1) {
-  @if $lines == 1 {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  } @else {
-    display: -webkit-box;
-    -webkit-line-clamp: $lines;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-}
-```
-
-**사용 예시:**
-```scss
-// 한 줄 말줄임
 .title {
-  @include text-ellipsis(1);
+  @include text-ellipsis(2);  // 2줄 말줄임
 }
 
-// 여러 줄 말줄임
 .description {
-  @include text-ellipsis(3);
+  @include font($font-size-sm, $font-weight-medium);
 }
 ```
 
 #### 4. 그림자
+
 ```scss
-@mixin shadow($level: 'md') {
-  @if $level == 'sm' {
-    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  } @else if $level == 'md' {
-    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-  } @else if $level == 'lg' {
-    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
-  }
+.card {
+  @include shadow('md');  // sm | base | md | lg | xl | 2xl
 }
 ```
 
-**사용 예시:**
+#### 5. 스크롤바
+
 ```scss
+.scrollable {
+  @include custom-scrollbar(
+    $width: 8px,
+    $track-color: $color-gray-100,
+    $thumb-color: $color-gray-400
+  );
+}
+```
+
+#### 6. 유틸리티
+
+```scss
+.sr-only-text {
+  @include sr-only;  // 스크린 리더 전용
+}
+
+.no-select {
+  @include no-select;  // 사용자 선택 방지
+}
+```
+
+---
+
+## 🎨 실전 예제
+
+### 예제 1: 카드 컴포넌트
+
+```scss
+// Card.module.scss
+@use '@/assets/scss/variables' as *;
+@use '@/assets/scss/mixins' as *;
+
 .card {
+  background: var(--color-background);
+  border-radius: $radius-lg;
+  padding: $spacing-6;
+
   @include shadow('md');
+  @include transition(all);
 
   &:hover {
     @include shadow('lg');
-  }
-}
-```
-
----
-
-## 🎯 SCSS Module 사용법
-
-### 1. 파일 생성
-
-**파일명:** `*.module.scss` (반드시 `.module.scss` 확장자)
-
-```scss
-// button.module.scss
-.button {
-  padding: 0.5rem 1rem;
-  border-radius: 0.25rem;
-
-  &:hover {
-    opacity: 0.8;
-  }
-}
-
-.primary {
-  background: #3b82f6;
-  color: white;
-}
-```
-
-### 2. TypeScript/React에서 사용
-
-```tsx
-import styles from './button.module.scss';
-
-function Button() {
-  return (
-    <button className={styles.button}>
-      Click me
-    </button>
-  );
-}
-```
-
-### 3. 여러 클래스 조합
-
-```tsx
-import { cn } from '@/shared/utils';
-import styles from './button.module.scss';
-
-function Button({ variant }) {
-  return (
-    <button className={cn(
-      styles.button,
-      variant === 'primary' && styles.primary
-    )}>
-      Click me
-    </button>
-  );
-}
-```
-
-### 4. Tailwind와 함께 사용
-
-```tsx
-<button className={cn(
-  styles.button,           // SCSS Module
-  'w-full max-w-xs'       // Tailwind
-)}>
-  Hybrid Button
-</button>
-```
-
----
-
-## 💡 실전 예시
-
-### 예시 1: Card 컴포넌트
-
-**card.module.scss:**
-```scss
-@import '@/app/globals.scss';
-
-.card {
-  background: white;
-  border-radius: 0.5rem;
-  padding: $spacing-lg;
-  @include shadow('md');
-  transition: all $transition-base;
-
-  &:hover {
     transform: translateY(-2px);
-    @include shadow('lg');
   }
 
-  @include respond-to('md') {
-    padding: $spacing-xl;
+  @include mobile {
+    padding: $spacing-4;
   }
 }
 
 .title {
-  font-size: 1.25rem;
-  font-weight: 600;
+  color: var(--color-text);
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  margin-bottom: $spacing-4;
+
   @include text-ellipsis(1);
 }
 
-.primary {
-  background: linear-gradient(135deg, $color-primary, $color-secondary);
-  color: white;
+.description {
+  color: var(--color-text-secondary);
+  font-size: $font-size-base;
+  line-height: 1.6;
+
+  @include text-ellipsis(3);
 }
 ```
 
-**card.tsx:**
-```tsx
-import styles from './card.module.scss';
+### 예제 2: 반응형 그리드
 
-export const Card = ({ title, variant, children }) => {
-  return (
-    <div className={cn(
-      styles.card,
-      variant === 'primary' && styles.primary
-    )}>
-      <h3 className={styles.title}>{title}</h3>
-      <div>{children}</div>
-    </div>
-  );
-};
-```
-
-### 예시 2: 애니메이션
-
-**animation.module.scss:**
 ```scss
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
+// Grid.module.scss
+@use '@/assets/scss/variables' as *;
+@use '@/assets/scss/mixins' as *;
 
-.fadeIn {
-  animation: fadeIn 0.3s ease-in-out;
-}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: $spacing-6;
 
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
+  @include respond-to('lg') {
+    grid-template-columns: repeat(3, 1fr);
   }
-}
 
-.spinner {
-  animation: spin 1s linear infinite;
+  @include tablet {
+    grid-template-columns: repeat(2, 1fr);
+    gap: $spacing-4;
+  }
+
+  @include mobile {
+    grid-template-columns: 1fr;
+    gap: $spacing-3;
+  }
 }
 ```
 
-### 예시 3: 중첩 (Nesting)
+### 예제 3: 다크모드 지원
 
-**nav.module.scss:**
 ```scss
-.nav {
-  display: flex;
-  gap: 1rem;
-
-  .item {
-    padding: 0.5rem 1rem;
-    color: gray;
-    cursor: pointer;
-
-    &:hover {
-      color: black;
-    }
-
-    &.active {
-      color: blue;
-      font-weight: bold;
-    }
-  }
+// Theme.module.scss
+.container {
+  // CSS 변수 사용 (다크모드 자동 대응)
+  background-color: var(--color-background);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
 }
+
+// JavaScript에서 다크모드 전환
+// document.documentElement.classList.add('dark');
 ```
 
 ---
 
-## 🔧 Best Practices
+## ⚠️ 주의사항
 
-### 1. globals.scss는 변수/믹스인만
+### 1. `styles.scss`를 Module에서 import하지 마세요
 
-❌ **나쁜 예:**
 ```scss
-// globals.scss
-.button {
-  padding: 1rem;
-}
+// ❌ 절대 금지!
+@use '@/assets/scss/styles' as *;
+
+// ✅ 올바른 방법
+@use '@/assets/scss/variables' as *;
+@use '@/assets/scss/mixins' as *;
 ```
 
-✅ **좋은 예:**
+**이유**: `styles.scss`는 전역 스타일을 포함하므로, Module에서 import하면 스타일이 중복되어 번들 크기가 커집니다.
+
+### 2. 변수와 믹스인은 필요한 것만 import
+
 ```scss
-// globals.scss
-$button-padding: 1rem;
+// ❌ 믹스인이 필요 없는데 import
+@use '@/assets/scss/mixins' as *;
 
-// button.module.scss
-@import '@/app/globals.scss';
-
-.button {
-  padding: $button-padding;
-}
+// ✅ 변수만 필요하면 variables만
+@use '@/assets/scss/variables' as *;
 ```
 
-### 2. SCSS Module은 컴포넌트별로
+### 3. CSS 변수 vs SCSS 변수 선택 기준
 
-✅ **좋은 구조:**
+| 상황 | 사용할 변수 |
+|------|------------|
+| 믹스인 내부에서 계산 | SCSS 변수 `$color-primary` |
+| 다크모드/테마 전환 | CSS 변수 `var(--color-primary)` |
+| JavaScript에서 제어 | CSS 변수 |
+| 빌드 타임 최적화 | SCSS 변수 |
+
+---
+
+## 📖 참고 자료
+
+- **SCSS 변수**: `src/assets/scss/_variables.scss`
+- **SCSS 믹스인**: `src/assets/scss/_mixins.scss`
+- **전역 스타일**: `src/assets/scss/_base.scss`
+- **애니메이션**: `src/assets/scss/_animations.scss`
+
+---
+
+## 🎓 Best Practices
+
+### 1. 컴포넌트마다 SCSS Module 사용
+
 ```
-components/
-├── button/
-│   ├── button.tsx
-│   └── button.module.scss
-├── card/
-│   ├── card.tsx
-│   └── card.module.scss
+src/components/Card/
+├── Card.tsx
+├── Card.module.scss  ✅
+└── index.ts
 ```
 
-### 3. Tailwind 우선, SCSS는 보조
+### 2. 네이밍 컨벤션
 
-```tsx
-// ✅ 좋은 예: 간단한 건 Tailwind
-<div className="flex items-center gap-4">
-
-// ✅ 좋은 예: 복잡한 건 SCSS Module
-<div className={styles.complexAnimation}>
+```scss
+// BEM 스타일 권장
+.card { }
+.card__header { }
+.card__title { }
+.card--featured { }
 ```
 
-### 4. 변수는 재사용
+### 3. 변수 우선 사용
 
 ```scss
 // ❌ 하드코딩
 .button {
-  padding: 16px;
+  padding: 12px 24px;
+  color: #3b82f6;
 }
 
 // ✅ 변수 사용
 .button {
-  padding: $spacing-md;
+  padding: $spacing-3 $spacing-6;
+  color: $color-primary;
 }
 ```
 
----
-
-## 📊 Tailwind vs SCSS 비교
-
-| 기능 | Tailwind | SCSS |
-|------|---------|------|
-| **유틸리티 클래스** | ⭐⭐⭐⭐⭐ | ⭐ |
-| **커스텀 애니메이션** | ⭐⭐ | ⭐⭐⭐⭐⭐ |
-| **변수 관리** | ⭐⭐⭐ | ⭐⭐⭐⭐⭐ |
-| **중첩/믹스인** | ❌ | ⭐⭐⭐⭐⭐ |
-| **빠른 프로토타이핑** | ⭐⭐⭐⭐⭐ | ⭐⭐ |
-| **스코프 격리** | ❌ | ⭐⭐⭐⭐⭐ (Module) |
-| **번들 사이즈** | 작음 | 중간 |
-| **학습 곡선** | 낮음 | 중간 |
-
----
-
-## 🚀 실전 워크플로우
-
-### 1. 새 컴포넌트 만들기
-
-```bash
-# 1. 폴더 생성
-mkdir src/presentation/components/ui/my-component
-
-# 2. 파일 생성
-touch src/presentation/components/ui/my-component/my-component.tsx
-touch src/presentation/components/ui/my-component/my-component.module.scss
-```
-
-### 2. SCSS 작성
+### 4. 믹스인으로 중복 제거
 
 ```scss
-// my-component.module.scss
-@import '@/app/globals.scss';
+// ❌ 중복 코드
+.button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
-.container {
+.icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+// ✅ 믹스인 사용
+.button {
   @include flex-center;
-  padding: $spacing-lg;
+}
 
-  @include respond-to('md') {
-    padding: $spacing-xl;
-  }
+.icon {
+  @include flex-center;
 }
 ```
 
-### 3. 컴포넌트 작성
+---
 
-```tsx
-// my-component.tsx
-import styles from './my-component.module.scss';
+## 💡 FAQ
 
-export const MyComponent = () => {
-  return (
-    <div className={cn(
-      styles.container,
-      'w-full max-w-md' // Tailwind 추가
-    )}>
-      Content
-    </div>
-  );
-};
+### Q1: Tailwind 완전히 제거됐나요?
+**A**: 네, `globals.scss`에서 Tailwind import가 제거되었습니다. 모든 스타일은 SCSS로 작성합니다.
+
+### Q2: CSS 변수는 어디서 확인하나요?
+**A**: `src/assets/scss/_base.scss`의 `:root` 섹션을 확인하세요.
+
+### Q3: 다크모드는 어떻게 구현하나요?
+**A**: CSS 변수를 사용하면 `_base.scss`의 `@media (prefers-color-scheme: dark)` 블록이 자동으로 적용됩니다.
+
+### Q4: 컴포넌트에서 애니메이션 사용하려면?
+**A**: `_animations.scss`에 정의된 클래스를 사용하거나, 직접 `@keyframes`를 정의하세요.
+
+```scss
+// 기존 애니메이션 사용
+.modal {
+  animation: fade-in 0.3s ease-in-out;
+}
+
+// 또는
+.modal {
+  composes: animate-fade-in from global;
+}
 ```
 
 ---
 
-## 🎓 학습 리소스
+## 🎉 요약
 
-### SCSS 공식 문서
-- [Sass Basics](https://sass-lang.com/guide)
-- [Sass Functions](https://sass-lang.com/documentation/modules)
+1. **전역 스타일**: `layout.tsx`에서 `@/assets/scss/styles.scss` import
+2. **컴포넌트 스타일**: `*.module.scss`에서 `@use '@/assets/scss/variables'` import
+3. **CSS 변수**: 다크모드, 테마 전환에 사용
+4. **SCSS 변수**: 믹스인, 계산, 빌드 타임 최적화에 사용
+5. **믹스인**: 반복되는 패턴을 재사용
 
-### CSS Modules
-- [Next.js CSS Modules](https://nextjs.org/docs/app/building-your-application/styling/css-modules)
-
----
-
-## ✅ 체크리스트
-
-- [x] Sass 설치 완료
-- [x] globals.scss 생성 (변수, 믹스인)
-- [x] SCSS Module 예시 (card.module.scss)
-- [x] Card 컴포넌트 구현
-- [x] Tailwind와 SCSS 통합
-
----
-
-## 🎉 완료!
-
-이제 **Tailwind + SCSS**의 강력한 조합을 사용할 수 있습니다!
-
-- **Tailwind:** 빠른 유틸리티 클래스
-- **SCSS 변수:** 일관된 디자인 토큰
-- **SCSS 믹스인:** 재사용 가능한 패턴
-- **SCSS Module:** 스코프 격리
-
-**최고의 개발 경험을 즐기세요!** 🚀
+**Happy Styling! 🎨**

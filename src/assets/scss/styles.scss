@@ -1,0 +1,53 @@
+/**
+ * 메인 SCSS Export 파일
+ *
+ * 왜 이 파일이 필요한가?
+ * - 모든 SCSS 파일을 한 곳에서 통합 관리
+ * - layout.tsx에서 한 번만 import하면 전역 스타일 적용
+ * - 순서대 중요: variables → mixins → base → animations
+ *
+ * 사용 방법:
+ * layout.tsx에서 import '@/assets/scss/styles.scss';
+ */
+
+// ==================== 1. 변수 (컴파일 타임) ====================
+// 다른 파일에서 사용하기 위해 @use로 가져오기
+@use './variables' as *;
+
+// ==================== 2. 믹스인 ====================
+// 변수에 의존하므로 variables 다음에 import
+@use './mixins' as *;
+
+// ==================== 3. 기본 스타일 ====================
+// CSS 변수 정의 + HTML 요소 기본 스타일
+// 전역 스타일이므로 @use가 아닌 @forward 사용
+@forward './base';
+
+// ==================== 4. 애니메이션 ====================
+// 키프레임 정의 + 애니메이션 유틸리티 클래스
+@forward './animations';
+
+/**
+ * ==================== 사용 가이드 ====================
+ *
+ * 1. 전역 스타일 적용 (layout.tsx):
+ *    import '@/assets/scss/styles.scss';
+ *
+ * 2. SCSS Module에서 변수/믹스인 사용:
+ *    @use '@/assets/scss/variables' as *;
+ *    @use '@/assets/scss/mixins' as *;
+ *
+ *    .myClass {
+ *      color: $color-primary;  // SCSS 변수
+ *      @include flex-center;   // SCSS 믹스인
+ *    }
+ *
+ * 3. CSS 변수 사용 (어디서든):
+ *    .myClass {
+ *      color: var(--color-primary);  // CSS 변수 (런타임)
+ *    }
+ *
+ * 4. 차이점:
+ *    - SCSS 변수: 컴파일 타임에 고정, 믹스인/함수에서 사용
+ *    - CSS 변수: 런타임에 변경 가능, JavaScript로 제어 가능
+ */

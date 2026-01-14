@@ -1,0 +1,359 @@
+/**
+ * SCSS 믹스인 정의
+ *
+ * 왜 믹스인을 사용하는가?
+ * - 반복되는 스타일 패턴을 재사용
+ * - 매개변수로 유연한 스타일 생성
+ * - 코드 중복 제거
+ */
+
+@use './variables' as *;
+
+// ==================== 반응형 믹스인 ====================
+
+/**
+ * 반응형 믹스인 (min-width 기반 - Desktop First)
+ *
+ * @example
+ * .element {
+ *   font-size: 14px;
+ *   @include respond-to('md') {
+ *     font-size: 16px;
+ *   }
+ * }
+ */
+@mixin respond-to($breakpoint) {
+  @if $breakpoint == 'sm' {
+    @media (min-width: $breakpoint-sm) {
+      @content;
+    }
+  } @else if $breakpoint == 'md' {
+    @media (min-width: $breakpoint-md) {
+      @content;
+    }
+  } @else if $breakpoint == 'lg' {
+    @media (min-width: $breakpoint-lg) {
+      @content;
+    }
+  } @else if $breakpoint == 'xl' {
+    @media (min-width: $breakpoint-xl) {
+      @content;
+    }
+  } @else if $breakpoint == '2xl' {
+    @media (min-width: $breakpoint-2xl) {
+      @content;
+    }
+  }
+}
+
+/**
+ * 반응형 믹스인 (max-width 기반 - Mobile First)
+ *
+ * @example
+ * .element {
+ *   display: flex;
+ *   @include mobile {
+ *     display: block;
+ *   }
+ * }
+ */
+@mixin mobile {
+  @media (max-width: $breakpoint-sm - 1px) {
+    @content;
+  }
+}
+
+@mixin tablet {
+  @media (max-width: $breakpoint-lg - 1px) {
+    @content;
+  }
+}
+
+@mixin desktop {
+  @media (min-width: $breakpoint-lg) {
+    @content;
+  }
+}
+
+// ==================== Flexbox 믹스인 ====================
+
+/**
+ * Flexbox 센터 정렬
+ */
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/**
+ * Flexbox 세로 센터 정렬
+ */
+@mixin flex-center-vertical {
+  display: flex;
+  align-items: center;
+}
+
+/**
+ * Flexbox 가로 센터 정렬
+ */
+@mixin flex-center-horizontal {
+  display: flex;
+  justify-content: center;
+}
+
+/**
+ * Flexbox space-between
+ */
+@mixin flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+// ==================== 텍스트 믹스인 ====================
+
+/**
+ * 말줄임 (ellipsis)
+ *
+ * @param {number} $lines - 표시할 줄 수 (기본값: 1)
+ *
+ * @example
+ * .text {
+ *   @include text-ellipsis(2); // 2줄 말줄임
+ * }
+ */
+@mixin text-ellipsis($lines: 1) {
+  @if $lines == 1 {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  } @else {
+    display: -webkit-box;
+    -webkit-line-clamp: $lines;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+/**
+ * 폰트 스타일 한 번에 적용
+ *
+ * @param {string} $size - 폰트 크기
+ * @param {number} $weight - 폰트 굵기
+ * @param {number} $line-height - 줄 높이 (선택)
+ */
+@mixin font($size, $weight: $font-weight-normal, $line-height: null) {
+  font-size: $size;
+  font-weight: $weight;
+  @if $line-height {
+    line-height: $line-height;
+  }
+}
+
+// ==================== 그림자 믹스인 ====================
+
+/**
+ * 그림자 적용
+ *
+ * @param {string} $level - sm | base | md | lg | xl | 2xl
+ */
+@mixin shadow($level: 'md') {
+  @if $level == 'sm' {
+    box-shadow: $shadow-sm;
+  } @else if $level == 'base' {
+    box-shadow: $shadow-base;
+  } @else if $level == 'md' {
+    box-shadow: $shadow-md;
+  } @else if $level == 'lg' {
+    box-shadow: $shadow-lg;
+  } @else if $level == 'xl' {
+    box-shadow: $shadow-xl;
+  } @else if $level == '2xl' {
+    box-shadow: $shadow-2xl;
+  }
+}
+
+// ==================== 위치 믹스인 ====================
+
+/**
+ * 절대 위치 중앙 정렬
+ */
+@mixin absolute-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/**
+ * 절대 위치 전체 채우기
+ */
+@mixin absolute-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+// ==================== 크기 믹스인 ====================
+
+/**
+ * 정사각형 크기 설정
+ */
+@mixin size($width, $height: $width) {
+  width: $width;
+  height: $height;
+}
+
+/**
+ * 최소/최대 크기 설정
+ */
+@mixin min-size($width, $height: $width) {
+  min-width: $width;
+  min-height: $height;
+}
+
+@mixin max-size($width, $height: $width) {
+  max-width: $width;
+  max-height: $height;
+}
+
+// ==================== 스크롤 믹스인 ====================
+
+/**
+ * 커스텀 스크롤바
+ *
+ * @param {string} $width - 스크롤바 너비 (기본값: 8px)
+ * @param {color} $track-color - 트랙 색상
+ * @param {color} $thumb-color - 썸 색상
+ */
+@mixin custom-scrollbar(
+  $width: 8px,
+  $track-color: $color-gray-100,
+  $thumb-color: $color-gray-400
+) {
+  &::-webkit-scrollbar {
+    width: $width;
+    height: $width;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: $track-color;
+    border-radius: $radius-base;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: $thumb-color;
+    border-radius: $radius-base;
+
+    &:hover {
+      background: darken($thumb-color, 10%);
+    }
+  }
+
+  // Firefox
+  scrollbar-width: thin;
+  scrollbar-color: $thumb-color $track-color;
+}
+
+/**
+ * 부드러운 스크롤
+ */
+@mixin smooth-scroll {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+// ==================== 애니메이션 믹스인 ====================
+
+/**
+ * 트랜지션 적용
+ *
+ * @param {string} $property - 트랜지션 속성 (기본값: all)
+ * @param {string} $duration - 지속 시간
+ * @param {string} $timing - 타이밍 함수
+ */
+@mixin transition(
+  $property: all,
+  $duration: $transition-base,
+  $timing: $ease-in-out
+) {
+  transition: $property $duration $timing;
+}
+
+// ==================== 유틸리티 믹스인 ====================
+
+/**
+ * 스크린 리더 전용 텍스트 (접근성)
+ */
+@mixin sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/**
+ * clearfix (float 해제)
+ */
+@mixin clearfix {
+  &::after {
+    content: '';
+    display: table;
+    clear: both;
+  }
+}
+
+/**
+ * 사용자 선택 방지
+ */
+@mixin no-select {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+/**
+ * 하드웨어 가속
+ */
+@mixin hardware-acceleration {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+// ==================== 플레이스홀더 믹스인 ====================
+
+/**
+ * input placeholder 스타일
+ *
+ * @example
+ * input {
+ *   @include placeholder {
+ *     color: gray;
+ *   }
+ * }
+ */
+@mixin placeholder {
+  &::placeholder {
+    @content;
+  }
+  &::-webkit-input-placeholder {
+    @content;
+  }
+  &::-moz-placeholder {
+    @content;
+  }
+  &:-ms-input-placeholder {
+    @content;
+  }
+}

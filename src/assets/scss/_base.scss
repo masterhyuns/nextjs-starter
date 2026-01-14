@@ -1,0 +1,300 @@
+/**
+ * 기본 전역 스타일
+ *
+ * 왜 이 파일이 필요한가?
+ * - HTML 요소의 기본 스타일 정의
+ * - 브라우저 간 일관성 확보
+ * - CSS 변수 정의 (:root)
+ */
+
+@use './variables' as *;
+
+// ==================== CSS 변수 정의 (:root) ====================
+
+/**
+ * CSS 변수 vs SCSS 변수
+ *
+ * CSS 변수 (--variable):
+ * - 런타임에 JavaScript로 변경 가능
+ * - 다크모드, 테마 전환에 유용
+ * - 브라우저에서 동적으로 계산
+ *
+ * SCSS 변수 ($variable):
+ * - 컴파일 타임에 고정
+ * - 믹스인, 함수에서 사용
+ * - 브라우저에 전달되지 않음 (컴파일됨)
+ */
+
+:root {
+  // 색상 변수 (라이트 모드)
+  --color-primary: #{$color-primary};
+  --color-primary-light: #{$color-primary-light};
+  --color-primary-dark: #{$color-primary-dark};
+
+  --color-secondary: #{$color-secondary};
+  --color-success: #{$color-success};
+  --color-warning: #{$color-warning};
+  --color-danger: #{$color-danger};
+  --color-info: #{$color-info};
+
+  // 배경/텍스트 색상
+  --color-background: #{$color-background};
+  --color-text: #{$color-text};
+  --color-text-secondary: #{$color-text-secondary};
+  --color-border: #{$color-border};
+
+  // 그레이 스케일
+  --color-gray-50: #{$color-gray-50};
+  --color-gray-100: #{$color-gray-100};
+  --color-gray-200: #{$color-gray-200};
+  --color-gray-300: #{$color-gray-300};
+  --color-gray-400: #{$color-gray-400};
+  --color-gray-500: #{$color-gray-500};
+  --color-gray-600: #{$color-gray-600};
+  --color-gray-700: #{$color-gray-700};
+  --color-gray-800: #{$color-gray-800};
+  --color-gray-900: #{$color-gray-900};
+
+  // 간격 변수
+  --spacing-1: #{$spacing-1};
+  --spacing-2: #{$spacing-2};
+  --spacing-3: #{$spacing-3};
+  --spacing-4: #{$spacing-4};
+  --spacing-5: #{$spacing-5};
+  --spacing-6: #{$spacing-6};
+  --spacing-8: #{$spacing-8};
+  --spacing-10: #{$spacing-10};
+  --spacing-12: #{$spacing-12};
+
+  // 폰트 크기
+  --font-size-xs: #{$font-size-xs};
+  --font-size-sm: #{$font-size-sm};
+  --font-size-base: #{$font-size-base};
+  --font-size-lg: #{$font-size-lg};
+  --font-size-xl: #{$font-size-xl};
+  --font-size-2xl: #{$font-size-2xl};
+
+  // Border Radius
+  --radius-sm: #{$radius-sm};
+  --radius-base: #{$radius-base};
+  --radius-md: #{$radius-md};
+  --radius-lg: #{$radius-lg};
+  --radius-xl: #{$radius-xl};
+
+  // 그림자
+  --shadow-sm: #{$shadow-sm};
+  --shadow-md: #{$shadow-md};
+  --shadow-lg: #{$shadow-lg};
+
+  // 전환 효과
+  --transition-fast: #{$transition-fast};
+  --transition-base: #{$transition-base};
+  --transition-slow: #{$transition-slow};
+}
+
+// 다크 모드 CSS 변수
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-background: #{$color-background-dark};
+    --color-text: #{$color-text-dark};
+    --color-text-secondary: #{$color-gray-400};
+    --color-border: #{$color-border-dark};
+
+    // 다크 모드에서는 그레이 스케일 반전
+    --color-gray-50: #{$color-gray-900};
+    --color-gray-100: #{$color-gray-800};
+    --color-gray-200: #{$color-gray-700};
+    --color-gray-800: #{$color-gray-200};
+    --color-gray-900: #{$color-gray-100};
+  }
+}
+
+// ==================== 기본 HTML 요소 스타일 ====================
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  font-size: var(--font-size-base);
+  line-height: 1.5;
+  color: var(--color-text);
+  background-color: var(--color-background);
+  overflow-x: hidden;
+}
+
+// ==================== 링크 스타일 ====================
+
+a {
+  color: var(--color-primary);
+  text-decoration: none;
+  transition: var(--transition-fast);
+
+  &:hover {
+    color: var(--color-primary-dark);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+}
+
+// ==================== 버튼 스타일 ====================
+
+button {
+  font-family: inherit;
+  font-size: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+  padding: 0;
+  color: inherit;
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+}
+
+// ==================== 폼 요소 스타일 ====================
+
+input,
+textarea,
+select {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-base);
+  padding: $spacing-2 $spacing-3;
+  transition: var(--transition-fast);
+
+  &:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba($color-primary, 0.1);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+    background-color: var(--color-gray-100);
+  }
+
+  &::placeholder {
+    color: var(--color-text-secondary);
+  }
+}
+
+// ==================== 제목 스타일 ====================
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin: 0;
+  font-weight: $font-weight-bold;
+  line-height: 1.2;
+  color: var(--color-text);
+}
+
+h1 {
+  font-size: $font-size-4xl;
+}
+
+h2 {
+  font-size: $font-size-3xl;
+}
+
+h3 {
+  font-size: $font-size-2xl;
+}
+
+h4 {
+  font-size: $font-size-xl;
+}
+
+h5 {
+  font-size: $font-size-lg;
+}
+
+h6 {
+  font-size: $font-size-base;
+}
+
+// ==================== 리스트 스타일 ====================
+
+ul,
+ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+// ==================== 이미지 스타일 ====================
+
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+// ==================== 테이블 스타일 ====================
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+// ==================== 유틸리티 클래스 ====================
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+.container {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 $spacing-4;
+
+  @media (min-width: $breakpoint-sm) {
+    padding: 0 $spacing-6;
+  }
+
+  @media (min-width: $breakpoint-lg) {
+    padding: 0 $spacing-8;
+  }
+}
